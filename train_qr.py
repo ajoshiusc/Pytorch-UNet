@@ -20,14 +20,14 @@ dir_img = Path('./data/imgs/')
 dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
-def BCEqr(P, Y, q=0.05):
+def BCEqr(P, Y, q=0.75):
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
 
     return torch.sum(-L)
 
 def train_net(net,
               device,
-              epochs: int = 5,
+              epochs: int = 1,
               batch_size: int = 1,
               learning_rate: float = 0.001,
               val_percent: float = 0.1,
@@ -37,6 +37,7 @@ def train_net(net,
     # 1. Create dataset
     try:
         dataset = CarvanaDataset(dir_img, dir_mask, img_scale)
+        #dataset = BasicDataset(dir_img, dir_mask, img_scale)
     except (AssertionError, RuntimeError):
         dataset = BasicDataset(dir_img, dir_mask, img_scale)
 
@@ -47,7 +48,7 @@ def train_net(net,
 
     # 3. Create data loaders
     loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)
-    train_loader = DataLoader(train_set, shuffle=True, **loader_args)
+    train_loader = DataLoader(train_set, shuffle=False, **loader_args)
     val_loader = DataLoader(val_set, shuffle=False, drop_last=True, **loader_args)
 
     # (Initialize logging)
@@ -132,7 +133,7 @@ def train_net(net,
                         'images': wandb.Image(images[0].cpu()),
                         'masks': {
                             'true': wandb.Image(true_masks[0].float().cpu()),
-                            'pred': wandb.Image(torch.softmax(masks_pred, dim=1)[0].float().cpu()),
+                            'pred': wandb.Image((torch.softmax(masks_pred, dim=1)[0,1]>0.5).float().cpu()),
                         },
                         'step': global_step,
                         'epoch': epoch,
