@@ -21,7 +21,7 @@ dir_img = Path('./data/imgs/')
 dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
-def BCEqr(P, Y, q=0.9):
+def BCEqr(P, Y, q=0.25):
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
 
     return torch.sum(-L)
