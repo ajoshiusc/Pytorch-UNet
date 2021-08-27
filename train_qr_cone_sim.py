@@ -21,15 +21,22 @@ dir_img = Path('./data/imgs/')
 dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
-def BCEqr(P, Y, q=0.95):
+def BCEqr(P, Y, q=0.1):
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
 
     return torch.sum(-L)
 
+
+def QRcost(f, Y, tau=0.05, h=.1):
+    L = (Y - (1-tau))*torch.sigmoid((f-.5)/h)
+
+    return torch.sum(-L)
+
+
 def train_net(net,
               device,
               epochs: int = 1,
-              batch_size: int = 1,
+              batch_size: int = 5,
               learning_rate: float = 0.001,
               val_percent: float = 0.1,
               save_checkpoint: bool = True,
@@ -77,7 +84,7 @@ def train_net(net,
     optimizer = optim.RMSprop(net.parameters(), lr=learning_rate, weight_decay=1e-8, momentum=0.9)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
-    criterion = BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
+    criterion = QRcost #BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
     global_step = 0
 
     # 5. Begin training
