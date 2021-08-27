@@ -26,8 +26,8 @@ def BCEqr(P, Y, q=0.1):
 
     return torch.sum(-L)
 
-
-def QRcost(f, Y, tau=0.05, h=.1):
+# This is the new cost function
+def QRcost(f, Y, tau=0.5, h=.1):
     L = (Y - (1-tau))*torch.sigmoid((f-.5)/h)
 
     return torch.sum(-L)
