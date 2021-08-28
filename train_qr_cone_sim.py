@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from utils.data_loading import BasicDataset, CarvanaDataset
 from utils.dice_score import dice_loss
-from evaluate_isle import evaluate_isle
+from evaluate import evaluate_grayscale
 from unet import UNet
 import numpy as np
 
@@ -50,7 +50,7 @@ def train_net(net,
     X = np.expand_dims(X,axis=3)
     M = np.expand_dims(M,axis=3)
 
-    X = np.concatenate((X,X,X,M),axis=3)
+    X = np.concatenate((X,M),axis=3)
 
     # 2. Split into train / validation partitions
     n_val = int(len(X) * val_percent)
@@ -93,8 +93,8 @@ def train_net(net,
         epoch_loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img') as pbar:
             for batch in train_loader:
-                images = batch[:,:,:,:3].permute((0,3,1,2)) #['image']
-                true_masks = batch[:,:,:,3] #batch['mask']
+                images = batch[:,:,:,np.newaxis,0].permute((0,3,1,2)) #['image']
+                true_masks = batch[:,:,:,1] #batch['mask']
 
                 assert images.shape[1] == net.n_channels, \
                     f'Network has been defined with {net.n_channels} input channels, ' \
@@ -134,7 +134,7 @@ def train_net(net,
                         histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
                         histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
 
-                    val_score = evaluate_isle(net, val_loader, device)
+                    val_score = evaluate_grayscale(net, val_loader, device)
                     scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = UNet(n_channels=3, n_classes=2, bilinear=True)
+    net = UNet(n_channels=1, n_classes=2, bilinear=True)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'

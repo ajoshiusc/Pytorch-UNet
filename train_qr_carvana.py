@@ -129,7 +129,7 @@ def train_net(net,
                         histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
                         histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
 
-                    val_score = evaluate(net, val_loader, device)
+                    val_score = evaluat_grayscalee(net, val_loader, device)
                     scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))

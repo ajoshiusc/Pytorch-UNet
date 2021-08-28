@@ -4,6 +4,12 @@ __pycache__/
 checkpoints/
 *.pth
 *.jpg
+*.png
+*.json
+*.wand*
+*.yaml
+*.txt
+*.npz
 venv/
 .idea/
 # Byte-compiled / optimized / DLL files

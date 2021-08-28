@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from utils.data_loading import BasicDataset, CarvanaDataset
 from utils.dice_score import dice_loss
-from evaluate_isle import evaluate_isle
+from evaluate import evaluate_isle
 from unet import UNet
 import numpy as np
 
@@ -21,11 +21,15 @@ dir_img = Path('./data/imgs/')
 dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
-def BCEqr(P, Y, q=0.25):
+def BCEqr(P, Y, q=0.5):
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
-
     return torch.sum(-L)
 
+# This is the new cost function
+def QRcost(f, Y, tau=0.5, h=.1):
+    L = (Y - (1-tau))*torch.sigmoid((f-.5)/h)
+
+    return torch.sum(-L)
 def train_net(net,
               device,
               epochs: int = 1,
@@ -41,14 +45,6 @@ def train_net(net,
         '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz'
     )
     X = d['data']
-    X_data = X[0:15 * 20, ::2, ::2, 0:3]
-
-    maskX = np.reshape(X[0:15*20, ::2, ::2, 2], (-1, 1))
-
-    y_true = X[0:15*20 ,::2, ::2, 3:4]
-
-    X_data = X_data.astype('float64')
-    X_valid = X_data[:, :, :, :]
 
     # 2. Split into train / validation partitions
     n_val = int(len(X) * val_percent)
@@ -82,7 +78,7 @@ def train_net(net,
     optimizer = optim.RMSprop(net.parameters(), lr=learning_rate, weight_decay=1e-8, momentum=0.9)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
-    criterion = BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
+    criterion = QRcost # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
     global_step = 0
 
     # 5. Begin training
@@ -91,8 +87,8 @@ def train_net(net,
         epoch_loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img') as pbar:
             for batch in train_loader:
-                images = batch[:,:,:,:3].permute((0,3,1,2)) #['image']
-                true_masks = batch[:,:,:,3] #batch['mask']
+                images = batch[:,:,:,:net.n_channels].permute((0,3,1,2)) #['image']
+                true_masks = batch[:,:,:,net.n_channels] #batch['mask']
 
                 assert images.shape[1] == net.n_channels, \
                     f'Network has been defined with {net.n_channels} input channels, ' \
@@ -157,7 +153,7 @@ def train_net(net,
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
-    parser.add_argument('--epochs', '-e', metavar='E', type=int, default=5, help='Number of epochs')
+    parser.add_argument('--epochs', '-e', metavar='E', type=int, default=1, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=1, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
                         help='Learning rate', dest='lr')
