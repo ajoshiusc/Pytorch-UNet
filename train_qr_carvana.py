@@ -13,23 +13,27 @@ from tqdm import tqdm
 
 from utils.data_loading import BasicDataset, CarvanaDataset
 from utils.dice_score import dice_loss
-from evaluate import evaluate
-from unet import UNet
+from evaluate import evaluate_QR
+from unet import QRUNet
 
 dir_img = Path('./data/imgs/')
 dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
 # This is the new cost function
-def QRcost(f, Y, tau=0.995, h=.1):
-    L = (Y - (1-tau))*torch.sigmoid((f-.5)/h)
+
+
+def QRcost(f, Y, q=0.5, h=.1):
+    L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
 
     return torch.sum(-L)
+
 
 def BCEqr(P, Y, q=0.75):
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
 
     return torch.sum(-L)
+
 
 def train_net(net,
               device,
@@ -50,12 +54,14 @@ def train_net(net,
     # 2. Split into train / validation partitions
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
-    train_set, val_set = random_split(dataset, [n_train, n_val], generator=torch.Generator().manual_seed(0))
+    train_set, val_set = random_split(
+        dataset, [n_train, n_val], generator=torch.Generator().manual_seed(0))
 
     # 3. Create data loaders
     loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)
     train_loader = DataLoader(train_set, shuffle=False, **loader_args)
-    val_loader = DataLoader(val_set, shuffle=False, drop_last=True, **loader_args)
+    val_loader = DataLoader(val_set, shuffle=False,
+                            drop_last=True, **loader_args)
 
     # (Initialize logging)
     experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
@@ -76,10 +82,13 @@ def train_net(net,
     ''')
 
     # 4. Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
-    optimizer = optim.RMSprop(net.parameters(), lr=learning_rate, weight_decay=1e-8, momentum=0.9)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2)  # goal: maximize Dice score
+    optimizer = optim.RMSprop(
+        net.parameters(), lr=learning_rate, weight_decay=1e-8, momentum=0.9)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
-    criterion = QRcost# BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
+    # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
+    criterion = QRcost
     global_step = 0
 
     # 5. Begin training
@@ -100,11 +109,15 @@ def train_net(net,
                 true_masks = true_masks.to(device=device, dtype=torch.float32)
 
                 with torch.cuda.amp.autocast(enabled=amp):
-                    masks_pred = net(images)
-                    loss = criterion(masks_pred[0,1,], true_masks[0,]) #\
-                          # + dice_loss(F.softmax(masks_pred, dim=1).float(),
-                          #             F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
-                          #             multiclass=True)
+                    masks_pred1, masks_pred2, masks_pred3 = net(images)
+
+                    # loss = criterion(masks_pred1[0,1,], true_masks[0,]) + criterion(masks_pred2[0,1,], true_masks[0,]) + criterion(masks_pred3[0,1,], true_masks[0,]) #\
+                    loss = criterion(masks_pred1[0, 1, ], true_masks[0, ], q=.75) + criterion(
+                        masks_pred2[0, 1, ], true_masks[0, ], q=.5) + criterion(masks_pred3[0, 1, ], true_masks[0, ], q=.25)  # \
+
+                    # + dice_loss(F.softmax(masks_pred, dim=1).float(),
+                    #             F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
+                    #             multiclass=True)
 
                 optimizer.zero_grad(set_to_none=True)
                 grad_scaler.scale(loss).backward()
@@ -126,10 +139,12 @@ def train_net(net,
                     histograms = {}
                     for tag, value in net.named_parameters():
                         tag = tag.replace('/', '.')
-                        histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
-                        histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
+                        histograms['Weights/' +
+                                   tag] = wandb.Histogram(value.data.cpu())
+                        histograms['Gradients/' +
+                                   tag] = wandb.Histogram(value.grad.data.cpu())
 
-                    val_score = evaluat_grayscalee(net, val_loader, device)
+                    val_score = evaluate_QR(net, val_loader, device)
                     scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
@@ -139,7 +154,10 @@ def train_net(net,
                         'images': wandb.Image(images[0].cpu()),
                         'masks': {
                             'true': wandb.Image(true_masks[0].float().cpu()),
-                            'pred': wandb.Image((torch.softmax(masks_pred, dim=1)[0,1]>0.5).float().cpu()),
+                            'pred1': wandb.Image((masks_pred1[0, 1] > 0.5).float().cpu()),
+                            'pred2': wandb.Image((masks_pred2[0, 1] > 0.5).float().cpu()),
+                            'pred3': wandb.Image((masks_pred3[0, 1] > 0.5).float().cpu()),
+
                         },
                         'step': global_step,
                         'epoch': epoch,
@@ -148,21 +166,28 @@ def train_net(net,
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
-            torch.save(net.state_dict(), str(dir_checkpoint / 'checkpoint_epoch{}.pth'.format(epoch + 1)))
+            torch.save(net.state_dict(), str(dir_checkpoint /
+                       'checkpoint_epoch{}.pth'.format(epoch + 1)))
             logging.info(f'Checkpoint {epoch + 1} saved!')
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
-    parser.add_argument('--epochs', '-e', metavar='E', type=int, default=5, help='Number of epochs')
-    parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=1, help='Batch size')
+    parser = argparse.ArgumentParser(
+        description='Train the UNet on images and target masks')
+    parser.add_argument('--epochs', '-e', metavar='E',
+                        type=int, default=5, help='Number of epochs')
+    parser.add_argument('--batch-size', '-b', dest='batch_size',
+                        metavar='B', type=int, default=1, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
                         help='Learning rate', dest='lr')
-    parser.add_argument('--load', '-f', type=str, default=False, help='Load model from a .pth file')
-    parser.add_argument('--scale', '-s', type=float, default=0.5, help='Downscaling factor of the images')
+    parser.add_argument('--load', '-f', type=str,
+                        default=False, help='Load model from a .pth file')
+    parser.add_argument('--scale', '-s', type=float,
+                        default=0.5, help='Downscaling factor of the images')
     parser.add_argument('--validation', '-v', dest='val', type=float, default=10.0,
                         help='Percent of the data that is used as validation (0-100)')
-    parser.add_argument('--amp', action='store_true', default=False, help='Use mixed precision')
+    parser.add_argument('--amp', action='store_true',
+                        default=False, help='Use mixed precision')
 
     return parser.parse_args()
 
@@ -170,14 +195,15 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
 
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.basicConfig(level=logging.INFO,
+                        format='%(levelname)s: %(message)s')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Using device {device}')
 
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = UNet(n_channels=3, n_classes=2, bilinear=True)
+    net = QRUNet(n_channels=3, n_classes=2, bilinear=True)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'

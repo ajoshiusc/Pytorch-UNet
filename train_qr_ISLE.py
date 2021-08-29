@@ -13,8 +13,8 @@ from tqdm import tqdm
 
 from utils.data_loading import BasicDataset, CarvanaDataset
 from utils.dice_score import dice_loss
-from evaluate import evaluate_isle
-from unet import UNet
+from evaluate import evaluate_isle_QR
+from unet import QRUNet
 import numpy as np
 
 dir_img = Path('./data/imgs/')
@@ -26,8 +26,8 @@ def BCEqr(P, Y, q=0.5):
     return torch.sum(-L)
 
 # This is the new cost function
-def QRcost(f, Y, tau=0.5, h=.1):
-    L = (Y - (1-tau))*torch.sigmoid((f-.5)/h)
+def QRcost(f, Y, q=0.5, h=.1):
+    L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
 
     return torch.sum(-L)
 def train_net(net,
@@ -99,8 +99,11 @@ def train_net(net,
                 true_masks = true_masks.to(device=device, dtype=torch.float32)
 
                 with torch.cuda.amp.autocast(enabled=amp):
-                    masks_pred = net(images)
-                    loss = criterion(masks_pred[0,1,], true_masks[0,]) #\
+                    masks_pred1, masks_pred2, masks_pred3 = net(images)
+                    loss = criterion(masks_pred1[0, 1, ], true_masks[0, ], q=.75) + criterion(
+                        masks_pred2[0, 1, ], true_masks[0, ], q=.5) + criterion(masks_pred3[0, 1, ], true_masks[0, ], q=.25)  # \
+                    
+                    #loss = criterion(masks_pred[0,1,], true_masks[0,]) #\
                           # + dice_loss(F.softmax(masks_pred, dim=1).float(),
                           #             F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
                           #             multiclass=True)
@@ -128,7 +131,7 @@ def train_net(net,
                         histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
                         histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
 
-                    val_score = evaluate_isle(net, val_loader, device)
+                    val_score = evaluate_isle_QR(net, val_loader, device)
                     scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
@@ -138,7 +141,10 @@ def train_net(net,
                         'images': wandb.Image(images[0,0].cpu()),
                         'masks': {
                             'true': wandb.Image(true_masks[0].float().cpu()),
-                            'pred': wandb.Image((torch.softmax(masks_pred, dim=1)[0,1]>0.5).float().cpu()),
+                            'pred1': wandb.Image((torch.softmax(masks_pred1, dim=1)[0,1]>0.5).float().cpu()),
+                            'pred2': wandb.Image((torch.softmax(masks_pred2, dim=1)[0,1]>0.5).float().cpu()),
+                            'pred3': wandb.Image((torch.softmax(masks_pred3, dim=1)[0,1]>0.5).float().cpu()),
+
                         },
                         'step': global_step,
                         'epoch': epoch,
@@ -176,7 +182,7 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = UNet(n_channels=3, n_classes=2, bilinear=True)
+    net = QRUNet(n_channels=3, n_classes=2, bilinear=True)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'

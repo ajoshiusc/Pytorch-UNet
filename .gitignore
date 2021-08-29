@@ -141,3 +141,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+train_qr_carvana.py
+wandb/latest-run
