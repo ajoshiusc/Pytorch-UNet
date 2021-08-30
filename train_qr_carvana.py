@@ -21,6 +21,9 @@ dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
 # This is the new cost function
+Q1 = 0.75
+Q2 = 0.5
+Q3 = 0.25
 
 
 def QRcost(f, Y, q=0.5, h=.1):
@@ -112,8 +115,8 @@ def train_net(net,
                     masks_pred1, masks_pred2, masks_pred3 = net(images)
 
                     # loss = criterion(masks_pred1[0,1,], true_masks[0,]) + criterion(masks_pred2[0,1,], true_masks[0,]) + criterion(masks_pred3[0,1,], true_masks[0,]) #\
-                    loss = criterion(masks_pred1[0, 1, ], true_masks[0, ], q=.75) + criterion(
-                        masks_pred2[0, 1, ], true_masks[0, ], q=.5) + criterion(masks_pred3[0, 1, ], true_masks[0, ], q=.25)  # \
+                    loss = criterion(masks_pred1[0, 1, ], true_masks[0, ], q=Q1) + criterion(
+                        masks_pred2[0, 1, ], true_masks[0, ], q=Q2) + criterion(masks_pred3[0, 1, ], true_masks[0, ], q=Q3)  # \
 
                     # + dice_loss(F.softmax(masks_pred, dim=1).float(),
                     #             F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
@@ -175,7 +178,7 @@ def get_args():
     parser = argparse.ArgumentParser(
         description='Train the UNet on images and target masks')
     parser.add_argument('--epochs', '-e', metavar='E',
-                        type=int, default=5, help='Number of epochs')
+                        type=int, default=1, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
                         metavar='B', type=int, default=1, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
@@ -224,6 +227,8 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
+        torch.save(net.state_dict(), 'CARAVAN_QR.pth')
+
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
