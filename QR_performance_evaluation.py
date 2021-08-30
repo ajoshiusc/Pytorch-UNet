@@ -9,8 +9,8 @@ from PIL import Image
 from torchvision import transforms
 
 from utils.data_loading import BasicDataset
-from unet import UNet
-from utils.utils import plot_img_and_mask
+from unet import QRUNet
+from utils.utils import plot_img_and_mask_QR
 
 
 def predict_img(net,
@@ -19,32 +19,36 @@ def predict_img(net,
                 scale_factor=1,
                 out_threshold=0.5):
     net.eval()
-    img = torch.from_numpy(BasicDataset.preprocess(full_img, scale_factor, is_mask=False))
-    img = img.unsqueeze(0)
+    #img = torch.from_numpy(BasicDataset.preprocess(full_img, scale_factor, is_mask=False))
+    img = torch.tensor(full_img[np.newaxis, :, :, :]).permute((0,3,1,2))  # .unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
 
     with torch.no_grad():
-        output = net(img)
+        pred_mask1, pred_mask2, pred_mask3 = net(img)
 
         if net.n_classes > 1:
-            probs = F.softmax(output, dim=1)[0]
+            pred_mask1 = F.softmax(pred_mask1, dim=1)[0]
+            pred_mask2 = F.softmax(pred_mask2, dim=1)[0]
+            pred_mask3 = F.softmax(pred_mask3, dim=1)[0]
         else:
-            probs = torch.sigmoid(output)[0]
+            pred_mask1 = torch.sigmoid(pred_mask1)[0]
+            pred_mask2 = torch.sigmoid(pred_mask2)[0]
+            pred_mask3 = torch.sigmoid(pred_mask3)[0]
 
         tf = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Resize((full_img.size[1], full_img.size[0])),
+            transforms.Resize((full_img.shape[1], full_img.shape[0])),
             transforms.ToTensor()
         ])
 
-        full_mask = tf(probs.cpu()).squeeze()
+        full_mask1 = tf(pred_mask1.cpu()).squeeze()
+        full_mask2 = tf(pred_mask2.cpu()).squeeze()
+        full_mask3 = tf(pred_mask3.cpu()).squeeze()
 
     if net.n_classes == 1:
-        return (full_mask > out_threshold).numpy()
+        return (full_mask1 > out_threshold).numpy(),(full_mask2 > out_threshold).numpy(),(full_mask3 > out_threshold).numpy()
     else:
-        return F.one_hot(full_mask.argmax(dim=0), net.n_classes).permute(2, 0, 1).numpy()
-
-
+        return F.one_hot(full_mask1.argmax(dim=0), net.n_classes).permute(2, 0, 1).numpy(), F.one_hot(full_mask2.argmax(dim=0), net.n_classes).permute(2, 0, 1).numpy(), F.one_hot(full_mask3.argmax(dim=0), net.n_classes).permute(2, 0, 1).numpy()
 
 
 def get_output_filenames(args):
@@ -64,15 +68,17 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    d = np.load('/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz')
-    model_file = 'MODEL.pth'
-    
-    X = d['data']
+    d = np.load(
+        '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz')
+    model_file = 'ISLE_QR.pth'
 
-    net = UNet(n_channels=1, n_classes=2)
+    X = d['data']
+    X[:,:,:,3] = np.float32(X[:,:,:,3]>0.5)
+
+    net = QRUNet(n_channels=3, n_classes=2)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    logging.info(f'Loading model {args.model}')
+    logging.info(f'Loading model {model_file}')
     logging.info(f'Using device {device}')
 
     net.to(device=device)
@@ -80,15 +86,19 @@ if __name__ == '__main__':
 
     logging.info('Model loaded!')
 
-    for i in range(X.shape[0]):
-        img = X[i,:,:,0]
-        true_mask = X[i,:,:,1]
+    for i in range(0,400,20):
 
-        quantile_masks = predict_img(net=net,
-                           full_img=img,
-                           scale_factor=args.scale,
-                           out_threshold=args.mask_threshold,
-                           device=device)
+        img = X[i, :, :, :3]
+        true_mask = X[i, :, :, 3]
 
+        qmask1,qmask2,qmask3 = predict_img(net=net,
+                                     full_img=img,
+                                     scale_factor=0.5,
+                                     out_threshold=0.5,
+                                     device=device)
 
-        plot_img_and_mask(img, mask)
+        qmask1 = qmask1[1]
+        qmask2 = qmask2[1]
+        qmask3 = qmask3[1]
+
+        plot_img_and_mask_QR(img[:,:,0], true_mask, qmask1, qmask2, qmask3)
