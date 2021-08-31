@@ -17,8 +17,7 @@ from tqdm import tqdm
 def predict_img(net, full_img, device, scale_factor=1, out_threshold=0.5):
     net.eval()
     #img = torch.from_numpy(BasicDataset.preprocess(full_img, scale_factor, is_mask=False))
-    img = torch.tensor(full_img[np.newaxis, np.newaxis, :, :])  #.permute(
-    #(0, 3, 1, 2))  # .unsqueeze(0)
+    img = torch.tensor(full_img[np.newaxis, :, :, :]).permute((0, 3, 1, 2))  # .unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
 
     with torch.no_grad():
@@ -74,21 +73,17 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    d = np.load('cone_data_sim.npz')
-    #    '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz'
-    #)
-    model_file = 'CONES_QR.pth'
+    #d = np.load('/big_disk/akrami/git_repos_new/rvae_orig/validation/Brain_Imaging/data_24_ISEL_100.npz')
+    d = np.load('/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz')
+    model_file = 'ISLE_QR.pth'
 
     X = d['data']
-    M = d['masks']
-
-    X = np.stack((X, M), axis=3)
 
     #X[:, :, :, 3] = np.float32(X[:, :, :, 3] > 0.5)
 
     num_pix = X.shape[1] * X.shape[2]
 
-    net = QRUNet(n_channels=1, n_classes=2)
+    net = QRUNet(n_channels=3, n_classes=2)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Loading model {model_file}')
@@ -102,11 +97,12 @@ if __name__ == '__main__':
     q2_p = 0.0
     q3_p = 0.0
     q4_p = 0.0
+    nsub = 0
 
     for i in tqdm(range(X.shape[0])):
 
-        img = np.float64(X[i, :, :, 0])
-        true_mask = np.float64(X[i, :, :, 1])
+        img = np.float64(X[i, :, :, :3])
+        true_mask = np.float64(X[i, :, :, 3])
 
         qmask1, qmask2, qmask3 = predict_img(net=net,
                                              full_img=img,
@@ -121,12 +117,15 @@ if __name__ == '__main__':
         #plot_img_and_mask_QR(img[:, :, 0], true_mask, qmask1, qmask2, qmask3)
 
         q1msk = np.float64(qmask1 < 0.5)
-        q1_p += np.sum(true_mask*q1msk) / np.sum(q1msk)
         q2msk = np.logical_and(qmask1 > 0.5, qmask2 < 0.5)
-        q2_p += np.sum(true_mask*q2msk) / np.sum(q2msk)
         q3msk = np.logical_and(qmask2 > 0.5, qmask3 < 0.5)
-        q3_p += np.sum(true_mask*q3msk) / np.sum(q3msk)
         q4msk = qmask3 > 0.5
-        q4_p += np.sum(true_mask*q4msk) / np.sum(q4msk)
 
-    print(q1_p/X.shape[0], q2_p/X.shape[0], q3_p/X.shape[0], q4_p/X.shape[0])
+        if np.sum(q1msk)*np.sum(q2msk)*np.sum(q3msk)*np.sum(q4msk) != 0:
+            q1_p += np.sum(true_mask*q1msk) / (np.sum(q1msk))
+            q2_p += np.sum(true_mask*q2msk) / (np.sum(q2msk))
+            q3_p += np.sum(true_mask*q3msk) / (np.sum(q3msk))
+            q4_p += np.sum(true_mask*q4msk) / (np.sum(q4msk))
+            nsub += 1
+
+    print(q1_p/nsub, q2_p/nsub, q3_p/nsub, q4_p/nsub)

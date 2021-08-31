@@ -41,7 +41,7 @@ def QRcost(f, Y, q=0.5, h=.1):
 
 def train_net(net,
               device,
-              epochs: int = 1,
+              epochs: int = 5,
               batch_size: int = 1,
               learning_rate: float = 0.001,
               val_percent: float = 0.1,
@@ -50,12 +50,10 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load(
-        '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz'
-    )
-    X = d['data']
-
-    X[:, :, :, 3] = np.float32(X[:, :, :, 3] > 0.5)
+    #d = np.load('/big_disk/akrami/git_repos_new/rvae_orig/validation/Brain_Imaging/data_24_ISEL_100.npz')
+    d = np.load('/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz')
+    X= d['data']
+    X[:, :, :, 3] = np.float64(X[:, :, :, 3] > 0.5)
 
     # 2. Split into train / validation partitions
     n_val = int(len(X) * val_percent)
@@ -215,7 +213,7 @@ def get_args():
                         '-e',
                         metavar='E',
                         type=int,
-                        default=1,
+                        default=15,
                         help='Number of epochs')
     parser.add_argument('--batch-size',
                         '-b',
