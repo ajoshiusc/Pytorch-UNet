@@ -53,7 +53,18 @@ def train_net(net,
     #d = np.load('/big_disk/akrami/git_repos_new/rvae_orig/validation/Brain_Imaging/data_24_ISEL_100.npz')
     d = np.load('/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz')
     X= d['data']
+    d2 = np.load('/home/ajoshi/Desktop/data_24_ISEL_histeq.npz')
+    X2= d2['data']
     X[:, :, :, 3] = np.float64(X[:, :, :, 3] > 0.5)
+
+    M=X[:, :, :, 3]
+    S=np.sum(M,axis=(1,2))
+    data = X[(S>=1),:,:,:]
+
+    np.savez('ISLE.npz', data=data)
+    X = d['data']
+    X[:, :, :, 3] = np.float64(X[:, :, :, 3] > 0.5)
+
 
     # 2. Split into train / validation partitions
     n_val = int(len(X) * val_percent)
@@ -213,7 +224,7 @@ def get_args():
                         '-e',
                         metavar='E',
                         type=int,
-                        default=15,
+                        default=20,
                         help='Number of epochs')
     parser.add_argument('--batch-size',
                         '-b',
@@ -287,7 +298,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'ISLE_QR.pth')
+        torch.save(net.state_dict(), 'ISLE_QR_fulldata.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

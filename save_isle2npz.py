@@ -145,7 +145,7 @@ with open('/big_disk/ajoshi/ISLES2015/ISLES2015_Training_done.txt') as f:
 tbidoneIds = [l.strip('\n\r') for l in tbidoneIds]
 window_H = 182
 window_W = 218
-slicerange = np.arange(0, 182, dtype=int)
+slicerange = np.arange(81, 101, dtype=int)
 data = read_data_test(study_dir=data_dir,
                                 ref_dir=ref_dir,
                                 subids=tbidoneIds,
@@ -162,5 +162,5 @@ fig, ax = plt.subplots()
 im = ax.imshow(data[0, :, :, 0])
 plt.show()
 #np.savez('data_24_ISEL_histeq.npz', data=data)
-#np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_81_101_histeq.npz', data=data)
-np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq.npz', data=data)
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_81_101_histeq.npz', data=data)
+#np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq.npz', data=data)
