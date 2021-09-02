@@ -140,8 +140,8 @@ tbidoneIds = [l.strip('\n\r') for l in tbidoneIds]
 window_H = 182
 window_W = 218
 
-slicerange = np.arange(81, 101, dtype=int)
-#slicerange = np.arange(0, 182, dtype=int)
+#slicerange = np.arange(81, 101, dtype=int)
+slicerange = np.arange(0, 182, dtype=int)
 
 data = read_data_test(study_dir=data_dir,
                       ref_dir=ref_dir,
@@ -167,11 +167,25 @@ data = data2
 
 
 #np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_81_101_histeq.npz', data=data)
-np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_81_101_histeq.npz', data=data)
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq.npz', data=data)
 
 S = np.sum(data[:,:,:,3],axis=(1,2))
-
 data = data[S>=1,:,:,:]
 
 #np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_81_101_histeq_nonzeroslices.npz', data=data)
-np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_81_101_histeq_nonzeroslices.npz', data=data)
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices.npz', data=data)
+
+data_training = data2[:len(slicerange)*22,]
+data_testing = data2[len(slicerange)*22:,]
+
+data = data_training
+S = np.sum(data[:,:,:,3],axis=(1,2))
+data = data[S>=1,:,:,:]
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz', data=data)
+
+data = data_testing
+S = np.sum(data[:,:,:,3],axis=(1,2))
+data = data[S>=1,:,:,:]
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_testing.npz', data=data)
+
+

@@ -51,26 +51,17 @@ def train_net(net,
     # 1. Create dataset
 
     #d = np.load('/big_disk/akrami/git_repos_new/rvae_orig/validation/Brain_Imaging/data_24_ISEL_100.npz')
-    d = np.load('/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz')
-    X= d['data']
-    d2 = np.load('/home/ajoshi/Desktop/data_24_ISEL_histeq.npz')
-    X2= d2['data']
-    X[:, :, :, 3] = np.float64(X[:, :, :, 3] > 0.5)
-
-    M=X[:, :, :, 3]
-    S=np.sum(M,axis=(1,2))
-    data = X[(S>=1),:,:,:]
-
-    np.savez('ISLE.npz', data=data)
-    X = d['data']
-    X[:, :, :, 3] = np.float64(X[:, :, :, 3] > 0.5)
-
-
+    #d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices.npz')
+    d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz')
+    train_set = d['data']
+    d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz')
+    val_set = d['data']
+ 
     # 2. Split into train / validation partitions
-    n_val = int(len(X) * val_percent)
-    n_train = len(X) - n_val
-    train_set, val_set = random_split(
-        X, [n_train, n_val], generator=torch.Generator().manual_seed(0))
+    n_val = len(val_set)
+    n_train = len(train_set)
+    #train_set, val_set = random_split(
+    #    X, [n_train, n_val], generator=torch.Generator().manual_seed(0))
 
     # 3. Create data loaders
     loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)

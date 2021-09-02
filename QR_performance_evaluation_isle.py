@@ -74,8 +74,8 @@ def mask_to_image(mask: np.ndarray):
 if __name__ == '__main__':
 
     #d = np.load('/big_disk/akrami/git_repos_new/rvae_orig/validation/Brain_Imaging/data_24_ISEL_100.npz')
-    d = np.load('/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz')
-    model_file = 'ISLE_QR.pth'
+    d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_testing.npz')
+    model_file = 'ISLE_QR_fulldata.pth'
 
     X = d['data']
 
@@ -97,7 +97,10 @@ if __name__ == '__main__':
     q2_p = 0.0
     q3_p = 0.0
     q4_p = 0.0
-    nsub = 0
+    nsub1 = 0
+    nsub2 = 0
+    nsub3 = 0
+    nsub4 = 0
 
     for i in tqdm(range(X.shape[0])):
 
@@ -121,11 +124,20 @@ if __name__ == '__main__':
         q3msk = np.logical_and(qmask2 > 0.5, qmask3 < 0.5)
         q4msk = qmask3 > 0.5
 
-        if np.sum(q1msk)*np.sum(q2msk)*np.sum(q3msk)*np.sum(q4msk) != 0:
+        if np.sum(q1msk) != 0:
             q1_p += np.sum(true_mask*q1msk) / (np.sum(q1msk))
+            nsub1 += 1
+        
+        if np.sum(q2msk) != 0:
             q2_p += np.sum(true_mask*q2msk) / (np.sum(q2msk))
-            q3_p += np.sum(true_mask*q3msk) / (np.sum(q3msk))
-            q4_p += np.sum(true_mask*q4msk) / (np.sum(q4msk))
-            nsub += 1
+            nsub2 += 1
 
-    print(q1_p/nsub, q2_p/nsub, q3_p/nsub, q4_p/nsub)
+        if np.sum(q3msk) != 0:
+            q3_p += np.sum(true_mask*q3msk) / (np.sum(q3msk))
+            nsub3 += 1
+
+        if np.sum(q4msk) != 0:
+            q4_p += np.sum(true_mask*q4msk) / (np.sum(q4msk))
+            nsub4 += 1
+
+    print(q1_p/nsub1, q2_p/nsub2, q3_p/nsub3, q4_p/nsub4)
