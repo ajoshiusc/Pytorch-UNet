@@ -41,7 +41,7 @@ def QRcost(f, Y, q=0.5, h=.1):
 
 def train_net(net,
               device,
-              epochs: int = 5,
+              epochs: int = 20,
               batch_size: int = 1,
               learning_rate: float = 0.001,
               val_percent: float = 0.1,
@@ -102,7 +102,7 @@ def train_net(net,
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
-    criterion = QRcost  # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
+    criterion = BCEqr # QRcost  # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
     global_step = 0
 
     # 5. Begin training
@@ -215,7 +215,7 @@ def get_args():
                         '-e',
                         metavar='E',
                         type=int,
-                        default=20,
+                        default=5,
                         help='Number of epochs')
     parser.add_argument('--batch-size',
                         '-b',
@@ -289,7 +289,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'ISLE_QR_fulldata.pth')
+        torch.save(net.state_dict(), 'ISLE_QR_Anand.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

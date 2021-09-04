@@ -27,6 +27,7 @@ Q2 = 0.5
 Q3 = 0.25
 
 def BCEqr(P, Y, q=0.1):
+    q = 0.5 # Fix this for binary cross entropy
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
 
     return torch.sum(-L)
@@ -34,16 +35,7 @@ def BCEqr(P, Y, q=0.1):
 # This is the new cost function
 
 
-def QRcost(f, Y, q=0.5):
-    error = f - Y
-    smaller_index = error < 0
-    bigger_index = 0 < error
-    loss = q * torch.sum(torch.abs(error)[smaller_index]) + (1-q) * torch.sum(torch.abs(error)[bigger_index])
-
-    return torch.sum(loss)
-
-
-def QRcost_old(f, Y, q=0.5, h=.1):
+def QRcost(f, Y, q=0.5, h=.1):
     L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
 
     return torch.sum(-L)
@@ -105,7 +97,7 @@ def train_net(net,
         optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
-    criterion = QRcost #BCEqr #QRcost
+    criterion = BCEqr
     global_step = 0
 
     # 5. Begin training
@@ -238,7 +230,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'CONES_QR_pinball.pth')
+        torch.save(net.state_dict(), 'CONES.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

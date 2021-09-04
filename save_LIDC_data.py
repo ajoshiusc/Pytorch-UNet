@@ -4,15 +4,13 @@ from PIL import Image
 import numpy as np
 from tqdm import tqdm
 
-mode = 'train'
+mode = 'val'
 
 subids = glob.glob('/big_disk/ajoshi/LIDC_data/'+mode+'/images/L*/*.png')
 
 
-images = np.zeros((len(subids),128,128))
-masks = np.zeros((len(subids),128,128,4))
-
-img_file = subids[0]
+images = np.zeros((4*len(subids),128,128))
+masks = np.zeros((4*len(subids),128,128))
 
 for i, img_file in enumerate(tqdm(subids)):
 
@@ -36,13 +34,14 @@ for i, img_file in enumerate(tqdm(subids)):
     m3 = Image.open(msk3_file)
     m3 = m0.resize((128,128),Image.NEAREST)
 
-    images[i,:,:] = np.array(im)
-    masks[i,:,:,0] = np.array(m0)
-    masks[i,:,:,1] = np.array(m1)
-    masks[i,:,:,2] = np.array(m2)
-    masks[i,:,:,3] = np.array(m3)
+    images[4*i,:,:] = np.float32(np.array(im))/255.0
+    images[4*i+1,:,:] = np.float32(np.array(im))/255.0
+    images[4*i+2,:,:] = np.float32(np.array(im))/255.0
+    images[4*i+3,:,:] = np.float32(np.array(im))/255.0
 
-np.savez('/big_disk/ajoshi/LIDC_data/' + mode + '.npz', images = images, masks=masks)
+    masks[4*i,:,:] = np.array(m0) > 128
+    masks[4*i+1,:,:] = np.array(m1) > 128
+    masks[4*i+2,:,:] = np.array(m2) > 128
+    masks[4*i+3,:,:] = np.array(m3) > 128
 
-
-
+np.savez('/big_disk/ajoshi/LIDC_data/' + mode + '.npz', images = images, masks = masks)
