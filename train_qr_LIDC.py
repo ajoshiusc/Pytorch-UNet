@@ -35,7 +35,7 @@ def BCEqr(P, Y, q):
 # This is the new cost function
 
 
-def QRcost(f, Y, q=0.5):
+def QRcost_new(f, Y, q=0.5):
     error = f - Y
     smaller_index = error < 0
     bigger_index = 0 < error
@@ -43,8 +43,9 @@ def QRcost(f, Y, q=0.5):
 
     return torch.sum(loss)
 
-def QRcost_old(f, Y, q=0.5, h=0.1):
-    L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+def QRcost(f, Y, q=0.5, h=0.1):
+    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+    L = (Y - (1-q))*((f))
 
     return torch.sum(-L)
 
@@ -53,7 +54,7 @@ def train_net(net,
               device,
               epochs: int = 1,
               batch_size: int = 50,
-              learning_rate: float = 0.001,
+              learning_rate: float = 0.00001,
               val_percent: float = 0.1,
               save_checkpoint: bool = True,
               img_scale: float = 0.5,

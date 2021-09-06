@@ -55,7 +55,7 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    d = np.load('/big_disk/ajoshi/LIDC_data/test.npz')
+    d = np.load('/big_disk/ajoshi/LIDC_data/train.npz')
     #    '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz'
     #)
     model_file = 'LIDC_QR.pth'
@@ -105,13 +105,13 @@ if __name__ == '__main__':
 
         #plot_img_and_mask_QR(img[:, :, 0], true_mask, qmask1, qmask2, qmask3)
         q1msk = np.float64(qmask1 < 0.5)
-        q2msk = np.float64(qmask1 > 0.5)
-        q3msk = np.float64(qmask2 > 0.5)
-        q4msk = np.float64(qmask3 > 0.5)
+        #q2msk = np.float64(qmask1 > 0.5)
+        #q3msk = np.float64(qmask2 > 0.5)
+        #q4msk = np.float64(qmask3 > 0.5)
 
-        #q2msk = np.logical_and(qmask1 > 0.5, qmask2 < 0.5)
-        #q3msk = np.logical_and(qmask2 > 0.5, qmask3 < 0.5)
-        #q4msk = qmask3 > 0
+        q2msk = np.float64(np.logical_and(qmask1 >= 0.5, qmask2 < 0.5))
+        q3msk = np.float64(np.logical_and(qmask2 >= 0.5, qmask3 < 0.5))
+        q4msk = np.float64(qmask3 >= 0.5)
 
         if np.sum(q1msk) > 0:
             q1_p += np.sum(true_mask*q1msk) / (np.sum(q1msk))

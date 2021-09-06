@@ -34,7 +34,7 @@ def BCEqr(P, Y, q=0.1):
 # This is the new cost function
 
 
-def QRcost(f, Y, q=0.5):
+def QRcost_pinball(f, Y, q=0.5):
     error = f - Y
     smaller_index = error < 0
     bigger_index = 0 < error
@@ -43,8 +43,9 @@ def QRcost(f, Y, q=0.5):
     return torch.sum(loss)
 
 
-def QRcost_old(f, Y, q=0.5, h=.1):
-    L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+def QRcost(f, Y, q=0.5, h=.1):
+    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+    L = (Y - (1-q))*((f))
 
     return torch.sum(-L)
 
@@ -238,7 +239,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'CONES_QR_pinball.pth')
+        torch.save(net.state_dict(), 'CONES_QR.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

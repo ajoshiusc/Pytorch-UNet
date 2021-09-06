@@ -52,11 +52,15 @@ def train_net(net,
 
     #d = np.load('/big_disk/akrami/git_repos_new/rvae_orig/validation/Brain_Imaging/data_24_ISEL_100.npz')
     #d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices.npz')
-    d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz')
+    d = np.load(
+        '/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz'
+    )
     train_set = d['data']
-    d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz')
+    d = np.load(
+        '/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz'
+    )
     val_set = d['data']
- 
+
     # 2. Split into train / validation partitions
     n_val = len(val_set)
     n_train = len(train_set)
@@ -102,7 +106,7 @@ def train_net(net,
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
-    criterion = BCEqr # QRcost  # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
+    criterion = QRcost  # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
     global_step = 0
 
     # 5. Begin training
@@ -289,7 +293,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'ISLE_QR_Anand.pth')
+        torch.save(net.state_dict(), 'ISLE_QR.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
