@@ -58,7 +58,7 @@ if __name__ == '__main__':
     d = np.load('/big_disk/ajoshi/LIDC_data/test.npz')
     #    '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz'
     #)
-    model_file = 'LIDC_QR_Anand75525.pth'
+    model_file = '/home/ajoshi/projects/QRSegment/checkpoints/checkpoint_epoch5.pth' #'LIDC_QR_Anand75525.pth'
 
     X = d['images']
     M = d['masks']

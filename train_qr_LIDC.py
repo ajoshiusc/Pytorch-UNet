@@ -53,7 +53,7 @@ def QRcost(f, Y, q=0.5, h=0.1):
 def train_net(net,
               device,
               epochs: int = 5,
-              batch_size: int = 5,
+              batch_size: int = 1,
               learning_rate: float = 1e-6, #0.001,
               val_percent: float = 0.1,
               save_checkpoint: bool = True,
@@ -106,11 +106,17 @@ def train_net(net,
         optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
-    criterion = QRcost # BCEqr #
+    #criterion = QRcost # BCEqr #
     global_step = 0
 
     # 5. Begin training
     for epoch in range(epochs):
+
+        if epoch<1:
+            criterion = BCEqr
+        else:
+            criterion = QRcost
+
         net.train()
         epoch_loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img') as pbar:
@@ -190,9 +196,9 @@ def get_args():
     parser = argparse.ArgumentParser(
         description='Train the UNet on images and target masks')
     parser.add_argument('--epochs', '-e', metavar='E',
-                        type=int, default=1, help='Number of epochs')
+                        type=int, default=5, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=5, help='Batch size')
+                        metavar='B', type=int, default=40, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
