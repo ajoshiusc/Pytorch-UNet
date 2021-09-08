@@ -62,7 +62,7 @@ if __name__ == '__main__':
     d = np.load('cone_data_sim_valid.npz')
     #    '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz'
     #)
-    model_file = 'CONES_QR_Haleh.pth'
+    model_file = 'CONES_QR.pth'
 
     X = d['data']
     M = d['masks']
@@ -87,6 +87,10 @@ if __name__ == '__main__':
     q2_p = 0.0
     q3_p = 0.0
     q4_p = 0.0
+    nsub1 = 0
+    nsub2 = 0
+    nsub3 = 0
+    nsub4 = 0
 
     for i in tqdm(range(X.shape[0])):
 
