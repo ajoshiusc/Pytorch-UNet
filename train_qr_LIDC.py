@@ -27,7 +27,6 @@ Q2 = 0.5 #0.8# 0.5
 Q3 = 0.25 #0.75 #0.25
 
 def BCEqr(P, Y, q):
-    #q=0.5
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
 
     return torch.sum(-L)
@@ -198,7 +197,7 @@ def get_args():
     parser.add_argument('--epochs', '-e', metavar='E',
                         type=int, default=5, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=40, help='Batch size')
+                        metavar='B', type=int, default=1, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
