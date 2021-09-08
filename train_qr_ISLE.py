@@ -226,7 +226,7 @@ def get_args():
                         dest='batch_size',
                         metavar='B',
                         type=int,
-                        default=1,
+                        default=5,
                         help='Batch size')
     parser.add_argument('--learning-rate',
                         '-l',

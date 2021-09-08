@@ -106,7 +106,7 @@ def train_net(net,
         optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
-    criterion = BCEqr #QRcost
+    criterion = QRcost # BCEqr #
     global_step = 0
 
     # 5. Begin training
@@ -129,8 +129,8 @@ def train_net(net,
 
                 with torch.cuda.amp.autocast(enabled=amp):
                     masks_pred1, masks_pred2, masks_pred3 = net(images)
-                    loss = criterion(masks_pred1[0, 1, ], true_masks[0, ], q=Q1) + criterion(
-                        masks_pred2[0, 1, ], true_masks[0, ], q=Q2) + criterion(masks_pred3[0, 1, ], true_masks[0, ], q=Q3)  # \
+                    loss = criterion(masks_pred1[:, 1, ], true_masks[:, ], q=Q1) + criterion(
+                        masks_pred2[:, 1, ], true_masks[:, ], q=Q2) + criterion(masks_pred3[:, 1, ], true_masks[:, ], q=Q3)  # \
                     # + dice_loss(F.softmax(masks_pred, dim=1).float(),
                     #             F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
                     #             multiclass=True)
@@ -192,7 +192,7 @@ def get_args():
     parser.add_argument('--epochs', '-e', metavar='E',
                         type=int, default=1, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=1, help='Batch size')
+                        metavar='B', type=int, default=5, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
