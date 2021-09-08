@@ -59,7 +59,7 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    d = np.load('cone_data_sim_valid.npz')
+    d = np.load('/ImagePTE1/ajoshi/code_farm/QRSegment/cone_data_sim_valid.npz')
     #    '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz'
     #)
     model_file = 'CONES_QR.pth'

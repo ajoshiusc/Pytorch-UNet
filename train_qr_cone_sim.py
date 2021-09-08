@@ -66,7 +66,7 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load('/home/ajoshi/projects/QRSegment/cone_data_sim_training.npz')
+    d = np.load('/ImagePTE1/ajoshi/code_farm/QRSegment/cone_data_sim_training.npz')
     X = d['data']
     M = d['masks']
     X = np.expand_dims(X, axis=3)
