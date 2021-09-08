@@ -21,6 +21,7 @@ def evaluate(net, dataloader, device):
         with torch.no_grad():
             # predict the mask
             mask_pred = net(image)
+            mask_pred = torch.float32(mask_pred>0.5)
 
             # convert to one-hot format
             if net.n_classes == 1:
