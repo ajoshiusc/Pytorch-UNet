@@ -62,7 +62,7 @@ if __name__ == '__main__':
     d = np.load('cone_data_sim_valid.npz')
     #    '/big_disk/akrami/git_repos_new/lesion-detector/VAE_9.5.2019/old results/data_24_ISEL_histeq.npz'
     #)
-    model_file = 'CONES_QR.pth'
+    model_file = 'CONES_QR_Haleh.pth'
 
     X = d['data']
     M = d['masks']
@@ -111,9 +111,20 @@ if __name__ == '__main__':
         q3msk = np.float64(np.logical_and(qmask2 >= 0.5, qmask3 < 0.5))
         q4msk = np.float64(qmask3 >= 0.5)
 
-        q1_p += np.sum(true_mask*q1msk) / np.sum(q1msk)
-        q2_p += np.sum(true_mask*q2msk) / np.sum(q2msk)
-        q3_p += np.sum(true_mask*q3msk) / np.sum(q3msk)
-        q4_p += np.sum(true_mask*q4msk) / np.sum(q4msk)
+        if np.sum(q1msk) > 0:
+            q1_p += np.sum(true_mask*q1msk) / (np.sum(q1msk))
+            nsub1 += 1
+        
+        if np.sum(q2msk) > 0:
+            q2_p += np.sum(true_mask*q2msk) / (np.sum(q2msk))
+            nsub2 += 1
 
-    print(q1_p/X.shape[0], q2_p/X.shape[0], q3_p/X.shape[0], q4_p/X.shape[0])
+        if np.sum(q3msk) > 0:
+            q3_p += np.sum(true_mask*q3msk) / (np.sum(q3msk))
+            nsub3 += 1
+
+        if np.sum(q4msk) > 0:
+            q4_p += np.sum(true_mask*q4msk) / (np.sum(q4msk))
+            nsub4 += 1
+
+    print(q1_p/nsub1, q2_p/nsub2, q3_p/nsub3, q4_p/nsub4)

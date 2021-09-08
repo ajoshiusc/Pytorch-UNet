@@ -43,6 +43,11 @@ def QRcost_pinball(f, Y, q=0.5):
     return torch.sum(loss)
 
 
+def QRcost_Haleh(P,Y,q=0.1):
+    L = Y*torch.log2(P-P*q+1e-16) + (1.0-Y)*torch.log2(1.0-P+P*q+1e-16)
+
+    return torch.sum(-L)
+
 def QRcost(f, Y, q=0.5, h=.1):
     #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
     L = (Y - (1-q))*((f))
@@ -61,7 +66,7 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load('/home/ajoshi/projects/QRSegment/cone_data_sim.npz')
+    d = np.load('/home/ajoshi/projects/QRSegment/cone_data_sim_training.npz')
     X = d['data']
     M = d['masks']
     X = np.expand_dims(X, axis=3)

@@ -22,9 +22,9 @@ dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
 
-Q1 = 0.75
-Q2 = 0.5
-Q3 = 0.25
+Q1 = 0.75 # 0.9 #0.75
+Q2 = 0.5 #0.8# 0.5
+Q3 = 0.25 #0.75 #0.25
 
 def BCEqr(P, Y, q):
     #q=0.5
@@ -45,16 +45,16 @@ def QRcost_new(f, Y, q=0.5):
 
 def QRcost(f, Y, q=0.5, h=0.1):
     #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    L = (Y - (1-q))*((f))
+    L = (Y - (1.0-q))*(f)
 
     return torch.sum(-L)
 
 
 def train_net(net,
               device,
-              epochs: int = 1,
-              batch_size: int = 50,
-              learning_rate: float = 0.00001,
+              epochs: int = 5,
+              batch_size: int = 5,
+              learning_rate: float = 1e-6, #0.001,
               val_percent: float = 0.1,
               save_checkpoint: bool = True,
               img_scale: float = 0.5,
@@ -106,7 +106,7 @@ def train_net(net,
         optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
-    criterion = QRcost #BCEqr  #QRcost
+    criterion = BCEqr #QRcost
     global_step = 0
 
     # 5. Begin training
@@ -239,7 +239,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_QR.pth')
+        torch.save(net.state_dict(), 'LIDC_QR_Anand75525.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

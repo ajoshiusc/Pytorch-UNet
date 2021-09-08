@@ -36,7 +36,8 @@ def BCEqr(P, Y, q=0.1):
 
 
 def QRcost(f, Y, q=0.5, h=.1):
-    L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+    L = (Y - (1-q))*((f))
 
     return torch.sum(-L)
 
@@ -52,7 +53,7 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load('/home/ajoshi/projects/QRSegment/cone_data_sim.npz')
+    d = np.load('/home/ajoshi/projects/QRSegment/cone_data_sim_training.npz')
     X = d['data']
     M = d['masks']
     X = np.expand_dims(X, axis=3)
@@ -97,7 +98,7 @@ def train_net(net,
         optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
-    criterion = BCEqr
+    criterion = QRcost
     global_step = 0
 
     # 5. Begin training
