@@ -22,9 +22,9 @@ dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
 
-Q1 = 0.75
+Q1 = 0.85
 Q2 = 0.5
-Q3 = 0.25
+Q3 = 0.15
 
 def BCEqr(P, Y, q=0.1):
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
@@ -197,7 +197,7 @@ def get_args():
     parser.add_argument('--epochs', '-e', metavar='E',
                         type=int, default=5, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=5, help='Batch size')
+                        metavar='B', type=int, default=10, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
@@ -244,7 +244,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'CONES_QR.pth')
+        torch.save(net.state_dict(), 'CONES_QR_15_50_85.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

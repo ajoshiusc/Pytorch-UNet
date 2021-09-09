@@ -10,12 +10,10 @@ from skimage.color import rgb2gray
 from skimage.transform import rescale, resize
 # Generate noisy image of a square
 CONST = 255
-image = imread('/home/ajoshi/projects/QRSegment/results_isle/true_image.png')
-image1 = imread('/home/ajoshi/projects/QRSegment/results_isle/0p1.png')
-image2 = imread('/home/ajoshi/projects/QRSegment/results_isle/0p25.png')
-image3 = imread('/home/ajoshi/projects/QRSegment/results_isle/0p5.png')
-image4 = imread('/home/ajoshi/projects/QRSegment/results_isle/0p75.png')
-image5 = imread('/home/ajoshi/projects/QRSegment/results_isle/0p9.png')
+
+input_img = '/big_disk/ajoshi/LIDC_data/test/images/LIDC-IDRI-0007/z-49.5_c0.png'
+image = imread(input_img)
+
 
 #image = rgb2gray(image)
 image=image[:,:,:3]
