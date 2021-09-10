@@ -29,8 +29,8 @@ def predict_img(net, full_img, device, scale_factor=1, out_threshold=0.5):
 # Generate noisy image of a square
 CONST = 255
 
-sub = 'LIDC-IDRI-0014'#'LIDC-IDRI-0933'
-imname = '132.75' #'135.25'
+sub = 'LIDC-IDRI-0112' #'LIDC-IDRI-0014'#'LIDC-IDRI-0933'
+imname = '262.0'#'132.75' #'135.25'
 model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_Anand85515_test.pth'
 #model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
 
