@@ -31,6 +31,8 @@ CONST = 255
 
 sub = 'LIDC-IDRI-0112' #'LIDC-IDRI-0014'#'LIDC-IDRI-0933'
 imname = '262.0'#'132.75' #'135.25'
+sub = 'LIDC-IDRI-0014'
+imname = '135.25'
 model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q.pth'
 #model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
 #model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'

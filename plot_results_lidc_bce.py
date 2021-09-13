@@ -31,6 +31,8 @@ CONST = 255
 
 sub = 'LIDC-IDRI-0112' #'LIDC-IDRI-0014'#'LIDC-IDRI-0933'
 imname = '262.0'#'132.75' #'135.25'
+sub = 'LIDC-IDRI-0014'
+imname = '135.25'
 #model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q.pth'
 #model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
 model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
@@ -70,7 +72,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 net.to(device=device)
 net.load_state_dict(torch.load(model_file, map_location=device))
-qmask, qmask1, qmask2 = predict_img(net=net,
+qmask0, qmask2, qmask = predict_img(net=net,
                                      full_img=img,
                                      scale_factor=0.5,
                                      out_threshold=0.5,
