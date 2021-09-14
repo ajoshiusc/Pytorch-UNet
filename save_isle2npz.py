@@ -158,22 +158,22 @@ fig, ax = plt.subplots()
 im = ax.imshow(data[0, :, :, 0])
 plt.show()
 
-data2 = np.zeros((data.shape[0],128,128,4))
+data2 = np.zeros((data.shape[0],64,64,4))
 for i in tqdm(range(data.shape[0])):
-    data2[i,:,:,:3] = cv2.resize(data[i,:,:,:3],dsize=(128, 128),interpolation=cv2.INTER_CUBIC)
-    data2[i,:,:,3] = cv2.resize(data[i,:,:,3],dsize=(128, 128),interpolation=cv2.INTER_NEAREST)
+    data2[i,:,:,:3] = cv2.resize(data[i,:,:,:3],dsize=(64, 64),interpolation=cv2.INTER_CUBIC)
+    data2[i,:,:,3] = cv2.resize(data[i,:,:,3],dsize=(64, 64),interpolation=cv2.INTER_NEAREST)
 
 data = data2
 
 
 #np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_81_101_histeq.npz', data=data)
-np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq.npz', data=data)
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq64.npz', data=data)
 
 S = np.sum(data[:,:,:,3],axis=(1,2))
 data = data[S>=1,:,:,:]
 
 #np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_81_101_histeq_nonzeroslices.npz', data=data)
-np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices.npz', data=data)
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices64.npz', data=data)
 
 data_training = data2[:len(slicerange)*22,]
 data_testing = data2[len(slicerange)*22:,]
@@ -181,11 +181,11 @@ data_testing = data2[len(slicerange)*22:,]
 data = data_training
 S = np.sum(data[:,:,:,3],axis=(1,2))
 data = data[S>=1,:,:,:]
-np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz', data=data)
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training64.npz', data=data)
 
 data = data_testing
 S = np.sum(data[:,:,:,3],axis=(1,2))
 data = data[S>=1,:,:,:]
-np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_testing.npz', data=data)
+np.savez('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_testing64.npz', data=data)
 
 

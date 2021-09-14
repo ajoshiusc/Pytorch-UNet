@@ -74,8 +74,8 @@ def mask_to_image(mask: np.ndarray):
 if __name__ == '__main__':
 
     #d = np.load('/big_disk/akrami/git_repos_new/rvae_orig/validation/Brain_Imaging/data_24_ISEL_100.npz')
-    d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz')
-    model_file = 'ISLE_QR_Anand.pth'
+    d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training64.npz')
+    model_file = 'ISLE_QR.pth'
 
     X = d['data']
 

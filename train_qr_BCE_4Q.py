@@ -13,8 +13,8 @@ from tqdm import tqdm
 
 from utils.data_loading import BasicDataset, CarvanaDataset
 from utils.dice_score import dice_loss
-from evaluate import evaluate_grayscale_QR
-from unet import QRUNet
+from evaluate import evaluate_grayscale_QR_4Q
+from unet import QRUNet_4Q
 import numpy as np
 
 dir_img = Path('./data/imgs/')
@@ -22,11 +22,21 @@ dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
 
-Q1 = 0.85 # 0.9 #0.75
-Q2 = 0.5 #0.8# 0.5
-Q3 = 0.15 #0.75 #0.25
+Q1 = 0.875 # 0.9 #0.75
+Q2 = 0.625 #0.8# 0.5
+Q3 = 0.375 #0.75 #0.25
+Q4 = 0.125
+
+
+
+def BCEqr_W(P, Y, q):
+    q= 166
+    L = q*Y*torch.log2(P+1e-16) + (1.0-Y)*torch.log2(1.0-P+1e-16)
+
+    return torch.sum(-L)
 
 def BCEqr(P, Y, q):
+    q= 0.5
     L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
 
     return torch.sum(-L)
@@ -42,18 +52,20 @@ def QRcost_new(f, Y, q=0.5):
 
     return torch.sum(loss)
 
+
+def QRcost_warmup(f, Y, q=0.5, h=0.1):
+    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+    q=0.625
+    L = (Y - (1.0-q))*(f)
+
+    return torch.sum(-L)
+
 def QRcost(f, Y, q=0.5, h=0.1):
     #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
     L = (Y - (1.0-q))*(f)
 
     return torch.sum(-L)
 
-def QRcost_85(f, Y, q=0.5, h=0.1):
-    q=.85
-    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    L = (Y - (1.0-q))*(f)
-
-    return torch.sum(-L)
 
 def train_net(net,
               device,
@@ -66,7 +78,7 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load('/big_disk/ajoshi/LIDC_data/train64.npz')
+    d = np.load('/big_disk/ajoshi/LIDC_data/train_noisy8.npz')
     X = d['images']
     M = d['masks']
     X = np.expand_dims(X, axis=3)
@@ -118,9 +130,9 @@ def train_net(net,
     for epoch in range(epochs):
 
         if epoch<1:
-            criterion = QRcost_85
+            criterion = BCEqr_W
         else:
-            criterion = QRcost
+            criterion = BCEqr#QRcost
 
         net.train()
         epoch_loss = 0
@@ -139,9 +151,9 @@ def train_net(net,
                 true_masks = true_masks.to(device=device, dtype=torch.float32)
 
                 with torch.cuda.amp.autocast(enabled=amp):
-                    masks_pred1, masks_pred2, masks_pred3 = net(images)
+                    masks_pred1, masks_pred2, masks_pred3,masks_pred4 = net(images)
                     loss = criterion(masks_pred1[:, 1, ], true_masks[:, ], q=Q1) + criterion(
-                        masks_pred2[:, 1, ], true_masks[:, ], q=Q2) + criterion(masks_pred3[:, 1, ], true_masks[:, ], q=Q3)  # \
+                        masks_pred2[:, 1, ], true_masks[:, ], q=Q2) + criterion(masks_pred3[:, 1, ], true_masks[:, ], q=Q3)+  criterion(masks_pred4[:, 1, ], true_masks[:, ], q=Q4)  # \
                     # + dice_loss(F.softmax(masks_pred, dim=1).float(),
                     #             F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
                     #             multiclass=True)
@@ -171,7 +183,7 @@ def train_net(net,
                         histograms['Gradients/' +
                                    tag] = wandb.Histogram(value.grad.data.cpu())
 
-                    val_score = evaluate_grayscale_QR(net, val_loader, device)
+                    val_score = evaluate_grayscale_QR_4Q(net, val_loader, device)
                     scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
@@ -184,6 +196,7 @@ def train_net(net,
                             'pred1': wandb.Image((masks_pred1[0, 1] > 0.5).float().cpu()),
                             'pred2': wandb.Image((masks_pred2[0, 1] > 0.5).float().cpu()),
                             'pred3': wandb.Image((masks_pred3[0, 1] > 0.5).float().cpu()),
+                            'pred4': wandb.Image((masks_pred4[0, 1] > 0.5).float().cpu()),
                         },
                         'step': global_step,
                         'epoch': epoch,
@@ -201,7 +214,7 @@ def get_args():
     parser = argparse.ArgumentParser(
         description='Train the UNet on images and target masks')
     parser.add_argument('--epochs', '-e', metavar='E',
-                        type=int, default=20, help='Number of epochs')
+                        type=int, default=5, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
                         metavar='B', type=int, default=40, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
@@ -229,7 +242,7 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = QRUNet(n_channels=1, n_classes=2, bilinear=True)
+    net = QRUNet_4Q(n_channels=1, n_classes=2, bilinear=True)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
@@ -250,7 +263,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_QR_85515_64.pth')
+        torch.save(net.state_dict(), 'LIDC_4Q_BCE_noisy8.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

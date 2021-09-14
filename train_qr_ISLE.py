@@ -31,12 +31,12 @@ def BCEqr(P, Y, q=0.5):
         1.0 - Y) * torch.log2(1.0 - P + 1e-16)
     return torch.sum(-L)
 
-
-# This is the new cost function
-def QRcost(f, Y, q=0.5, h=.1):
-    L = (Y - (1 - q)) * torch.sigmoid((f - .5) / h)
+def QRcost(f, Y, q=0.5, h=0.1):
+    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+    L = (Y - (1.0-q))*(f)
 
     return torch.sum(-L)
+
 
 
 def train_net(net,
@@ -53,11 +53,11 @@ def train_net(net,
     #d = np.load('/big_disk/akrami/git_repos_new/rvae_orig/validation/Brain_Imaging/data_24_ISEL_100.npz')
     #d = np.load('/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices.npz')
     d = np.load(
-        '/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz'
+        '/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training64.npz'
     )
     train_set = d['data']
     d = np.load(
-        '/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training.npz'
+        '/big_disk/ajoshi/ISLES2015/ISEL_28sub_slices_0_182_histeq_nonzeroslices_training64.npz'
     )
     val_set = d['data']
 
@@ -226,7 +226,7 @@ def get_args():
                         dest='batch_size',
                         metavar='B',
                         type=int,
-                        default=5,
+                        default=20,
                         help='Batch size')
     parser.add_argument('--learning-rate',
                         '-l',
@@ -293,7 +293,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'ISLE_QR.pth')
+        torch.save(net.state_dict(), 'ISLE_QR64.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

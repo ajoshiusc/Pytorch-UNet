@@ -25,7 +25,7 @@ dir_checkpoint = Path('./checkpoints/')
 Q1 = 0.875 # 0.9 #0.75
 Q2 = 0.625 #0.8# 0.5
 Q3 = 0.375 #0.75 #0.25
-Q4=0.125
+Q4 = 0.125
 
 
 
@@ -78,7 +78,7 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load('/big_disk/ajoshi/LIDC_data/train.npz')
+    d = np.load('/big_disk/ajoshi/LIDC_data/train_noisy.npz')
     X = d['images']
     M = d['masks']
     X = np.expand_dims(X, axis=3)
@@ -263,7 +263,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_AAJ_4Q_V2.pth')
+        torch.save(net.state_dict(), 'LIDC_4Q_QR_noisy.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

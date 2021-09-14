@@ -10,9 +10,10 @@ from PIL import Image
 from torchvision import transforms
 
 from utils.data_loading import BasicDataset
-from unet import QRUNet_4Q
+from unet import QRUNet, QRUNet_4Q
 from utils.utils import plot_img_and_mask_QR
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 
 def dice_coef(mask1, mask2):
@@ -20,7 +21,6 @@ def dice_coef(mask1, mask2):
     mask2 = np.float32(mask2)
 
     return 2*np.sum(mask1*mask2)/(np.sum(np.float32(mask1+mask2))+1e-8)
-
 
 def predict_img_4q(net, full_img, device, scale_factor=1, out_threshold=0.5):
     net.eval()
@@ -32,16 +32,20 @@ def predict_img_4q(net, full_img, device, scale_factor=1, out_threshold=0.5):
     with torch.no_grad():
         pred_mask0, pred_mask1, pred_mask2, pred_mask3 = net(img)
 
-        """         if net.n_classes > 1:
-            pred_mask1 = F.softmax(pred_mask1, dim=1)[0]
-            pred_mask2 = F.softmax(pred_mask2, dim=1)[0]
-            pred_mask3 = F.softmax(pred_mask3, dim=1)[0]
-        else:
-            pred_mask1 = torch.sigmoid(pred_mask1)[0]
-            pred_mask2 = torch.sigmoid(pred_mask2)[0]
-            pred_mask3 = torch.sigmoid(pred_mask3)[0]
-        """
     return pred_mask0, pred_mask1, pred_mask2, pred_mask3
+
+
+def predict_img(net, full_img, device, scale_factor=1, out_threshold=0.5):
+    net.eval()
+    #img = torch.from_numpy(BasicDataset.preprocess(full_img, scale_factor, is_mask=False))
+    img = torch.tensor(full_img[np.newaxis, np.newaxis, :, :])  #.permute(
+    #(0, 3, 1, 2))  # .unsqueeze(0)
+    img = img.to(device=device, dtype=torch.float32)
+
+    with torch.no_grad():
+        pred_mask0, pred_mask1, pred_mask2 = net(img)
+
+    return pred_mask0, pred_mask1, pred_mask2
 
 
 
@@ -63,13 +67,18 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    model_file = 'LIDC_4Q_BCE_noisy8.pth'
+    model_file_bce = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
+    model_file_qr = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q.pth'
 
-    net = QRUNet_4Q(n_channels=1, n_classes=2)
+    netqr = QRUNet_4Q(n_channels=1, n_classes=2)
+    netbce = QRUNet(n_channels=1, n_classes=2)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    net.to(device=device)
-    net.load_state_dict(torch.load(model_file, map_location=device))
+    netqr.to(device=device)
+    netqr.load_state_dict(torch.load(model_file_qr, map_location=device))
+    netbce.to(device=device)
+    netbce.load_state_dict(torch.load(model_file_bce, map_location=device))
+
 
     mode = 'test'
 
@@ -106,21 +115,28 @@ if __name__ == '__main__':
         m2 = np.float32(np.array(m2) > 128)
         m3 = np.float32(np.array(m3) > 128)
 
-        qmask, qmask1, qmask2, _ = predict_img_4q(net=net,
+        qmask_bce, _, _ = predict_img(net=netbce,
                                             full_img=image,
                                             scale_factor=0.5,
                                             out_threshold=0.5,
                                             device=device)
 
-        qmask0 = np.array(qmask[0, 1, ].cpu()>0.125)
-        qmask1 = np.array(qmask[0, 1, ].cpu()>0.375)
-        qmask2 = np.array(qmask[0, 1, ].cpu()>0.625)
-        qmask3 = np.array(qmask[0, 1, ].cpu()>0.875)
+        qmask_qr0, qmask_qr1, qmask_qr2, qmask_qr3 = predict_img_4q(net=netqr,
+                                            full_img=image,
+                                            scale_factor=0.5,
+                                            out_threshold=0.5,
+                                            device=device)
 
-        #qmask0 = np.array(qmask[0, 1, ].cpu()>0.25)
-        #qmask1 = np.array(qmask[0, 1, ].cpu()>0.5)
-        #qmask2 = np.array(qmask[0, 1, ].cpu()>0.75)
-        #qmask3 = np.array(qmask[0, 1, ].cpu()>0.99)
+
+        qmask0_bce = np.array(qmask_bce[0, 1, ].cpu()>0.125)
+        qmask1_bce = np.array(qmask_bce[0, 1, ].cpu()>0.375)
+        qmask2_bce = np.array(qmask_bce[0, 1, ].cpu()>0.625)
+        qmask3_bce = np.array(qmask_bce[0, 1, ].cpu()>0.875)
+
+        qmask0_qr = np.array(qmask_qr0[0, 1, ].cpu()>0.5)
+        qmask1_qr = np.array(qmask_qr1[0, 1, ].cpu()>0.5)
+        qmask2_qr = np.array(qmask_qr2[0, 1, ].cpu()>0.5)
+        qmask3_qr = np.array(qmask_qr3[0, 1, ].cpu()>0.5)
 
 
         m = (m0 + m1 + m2 + m3) / 4.0
@@ -129,12 +145,16 @@ if __name__ == '__main__':
         mask2 = m > 0.625
         mask3 = m > 0.875
 
-        dice_coeffs[i,0] = dice_coef(mask0,qmask0)
-        dice_coeffs[i,1] = dice_coef(mask1,qmask1)
-        dice_coeffs[i,2] = dice_coef(mask2,qmask2)
-        dice_coeffs[i,3] = dice_coef(mask3,qmask3)
+        dice_coeffs[i,0] = dice_coef(qmask0_qr,qmask0_bce)
+        dice_coeffs[i,1] = dice_coef(qmask1_qr,qmask1_bce)
+        dice_coeffs[i,2] = dice_coef(qmask2_qr,qmask2_bce)
+        dice_coeffs[i,3] = dice_coef(qmask3_qr,qmask3_bce)
 
 
 
     print(np.mean(dice_coeffs,axis=0))
     print(np.std(dice_coeffs,axis=0))
+
+    plt.hist(dice_coeffs,bins='auto')
+    plt.show()
+

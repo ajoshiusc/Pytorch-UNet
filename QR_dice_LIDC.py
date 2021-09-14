@@ -62,7 +62,7 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q.pth'  #'LIDC_QR_Anand75525.pth'
+    model_file = 'LIDC_4Q_noisy.pth' #LIDC_AAJ_4Q.pth'  #'LIDC_QR_Anand75525.pth'
     net = QRUNet_4Q(n_channels=1, n_classes=2)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

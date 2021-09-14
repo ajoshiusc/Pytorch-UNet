@@ -25,10 +25,8 @@ Q1 = 0.75
 Q2 = 0.5
 Q3 = 0.25
 
-
-def QRcost(f, Y, q=0.5, h=.1):
-    L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-
+def QRcost(f, Y, q=0.5, h=0.1):
+    L = (Y - (1.0-q))*(f)
     return torch.sum(-L)
 
 

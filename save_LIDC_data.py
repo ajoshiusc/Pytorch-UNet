@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 from tqdm import tqdm
 
-mode = 'val'
+mode = 'train'
 
 subids = glob.glob('/big_disk/ajoshi/LIDC_data/'+mode+'/images/L*/*.png')
 
@@ -34,6 +34,8 @@ for i, img_file in enumerate(tqdm(subids)):
     m3 = Image.open(msk3_file)
     m3 = m0.resize((128,128),Image.NEAREST)
 
+
+
     images[4*i,:,:] = np.float32(np.array(im))/255.0
     images[4*i+1,:,:] = np.float32(np.array(im))/255.0
     images[4*i+2,:,:] = np.float32(np.array(im))/255.0
@@ -43,5 +45,8 @@ for i, img_file in enumerate(tqdm(subids)):
     masks[4*i+1,:,:] = np.array(m1) > 128
     masks[4*i+2,:,:] = np.array(m2) > 128
     masks[4*i+3,:,:] = np.array(m3) > 128
+    # noisy labels
+    if i<len(subids)/8:
+        masks[4*i+3,:,:] = 0
 
-np.savez('/big_disk/ajoshi/LIDC_data/' + mode + '.npz', images = images, masks = masks)
+np.savez('/big_disk/ajoshi/LIDC_data/' + mode + '_noisy8.npz', images = images, masks = masks)
