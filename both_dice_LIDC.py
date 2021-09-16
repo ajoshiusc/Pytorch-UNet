@@ -68,7 +68,7 @@ def mask_to_image(mask: np.ndarray):
 if __name__ == '__main__':
 
     model_file_bce = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
-    model_file_qr = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q.pth'
+    model_file_qr = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q_V2.pth'
 
     netqr = QRUNet_4Q(n_channels=1, n_classes=2)
     netbce = QRUNet(n_channels=1, n_classes=2)
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     netbce.load_state_dict(torch.load(model_file_bce, map_location=device))
 
 
-    mode = 'test'
+    mode = 'val'
 
     subids = glob.glob('/big_disk/ajoshi/LIDC_data/'+mode+'/images/L*/*.png')
 
@@ -196,13 +196,13 @@ if __name__ == '__main__':
         if np.sum(qmask0_bce)==0:
             empty_q_bce[0] += 1
 
-        if np.sum(qmask1_qr)==0:
+        if np.sum(qmask1_bce)==0:
             empty_q_bce[1] += 1
 
-        if np.sum(qmask2_qr)==0:
+        if np.sum(qmask2_bce)==0:
             empty_q_bce[2] += 1
 
-        if np.sum(qmask3_qr)==0:
+        if np.sum(qmask3_bce)==0:
             empty_q_bce[3] += 1
 
 
@@ -248,7 +248,7 @@ if __name__ == '__main__':
  
     fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharey=True)
 
-    plt.violinplot([dice_coeffs_qr_gt0,dice_coeffs_qr_gt1,dice_coeffs_qr_gt2,dice_coeffs_qr_gt3],positions=range(4))
+    plt.violinplot([dice_coeffs_bce_gt0,dice_coeffs_bce_gt1,dice_coeffs_bce_gt2,dice_coeffs_bce_gt3],positions=range(4))
     ax1.set_xticks(range(4))
     plt.draw()
 
