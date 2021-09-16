@@ -84,7 +84,13 @@ if __name__ == '__main__':
 
     subids = glob.glob('/big_disk/ajoshi/LIDC_data/'+mode+'/images/L*/*.png')
 
-    dice_coeffs = np.zeros((len(subids),4))
+    dice_coeffs_qr_bce = np.zeros((len(subids),4))
+    dice_coeffs_qr_gt = np.zeros((len(subids),4))
+    dice_coeffs_bce_gt = np.zeros((len(subids),4))
+
+    empty_q_qr = np.zeros((len(subids),4))
+    empty_q_bce = np.zeros((len(subids),4))
+    empty_q_gt = np.zeros((len(subids),4))
 
     for i, img_file in enumerate(tqdm(subids)):
 
@@ -140,21 +146,142 @@ if __name__ == '__main__':
 
 
         m = (m0 + m1 + m2 + m3) / 4.0
-        mask0 = m > 0.125
-        mask1 = m > 0.375
-        mask2 = m > 0.625
-        mask3 = m > 0.875
+        qmask0_gt = m > 0.125
+        qmask1_gt = m > 0.375
+        qmask2_gt = m > 0.625
+        qmask3_gt = m > 0.875
 
-        dice_coeffs[i,0] = dice_coef(qmask0_qr,qmask0_bce)
-        dice_coeffs[i,1] = dice_coef(qmask1_qr,qmask1_bce)
-        dice_coeffs[i,2] = dice_coef(qmask2_qr,qmask2_bce)
-        dice_coeffs[i,3] = dice_coef(qmask3_qr,qmask3_bce)
+        dice_coeffs_qr_bce[i,0] = dice_coef(qmask0_qr,qmask0_bce)
+        dice_coeffs_qr_bce[i,1] = dice_coef(qmask1_qr,qmask1_bce)
+        dice_coeffs_qr_bce[i,2] = dice_coef(qmask2_qr,qmask2_bce)
+        dice_coeffs_qr_bce[i,3] = dice_coef(qmask3_qr,qmask3_bce)
+
+        dice_coeffs_qr_gt[i,0] = dice_coef(qmask0_qr,qmask0_gt)
+        dice_coeffs_qr_gt[i,1] = dice_coef(qmask1_qr,qmask1_gt)
+        dice_coeffs_qr_gt[i,2] = dice_coef(qmask2_qr,qmask2_gt)
+        dice_coeffs_qr_gt[i,3] = dice_coef(qmask3_qr,qmask3_gt)
+
+        dice_coeffs_bce_gt[i,0] = dice_coef(qmask0_bce,qmask0_gt)
+        dice_coeffs_bce_gt[i,1] = dice_coef(qmask1_bce,qmask1_gt)
+        dice_coeffs_bce_gt[i,2] = dice_coef(qmask2_bce,qmask2_gt)
+        dice_coeffs_bce_gt[i,3] = dice_coef(qmask3_bce,qmask3_gt)
 
 
 
-    print(np.mean(dice_coeffs,axis=0))
-    print(np.std(dice_coeffs,axis=0))
+        if np.sum(qmask0_gt)==0:
+            empty_q_gt[i,0] += 1
 
-    plt.hist(dice_coeffs,bins='auto')
+        if np.sum(qmask1_gt)==0:
+            empty_q_gt[i,1] += 1
+
+        if np.sum(qmask2_gt)==0:
+            empty_q_gt[i,2] += 1
+
+        if np.sum(qmask3_gt)==0:
+            empty_q_gt[i,3] += 1
+
+
+        if np.sum(qmask0_qr)==0:
+            empty_q_qr[0] += 1
+
+        if np.sum(qmask1_qr)==0:
+            empty_q_qr[1] += 1
+
+        if np.sum(qmask2_qr)==0:
+            empty_q_qr[2] += 1
+
+        if np.sum(qmask3_qr)==0:
+            empty_q_qr[3] += 1
+
+        if np.sum(qmask0_bce)==0:
+            empty_q_bce[0] += 1
+
+        if np.sum(qmask1_qr)==0:
+            empty_q_bce[1] += 1
+
+        if np.sum(qmask2_qr)==0:
+            empty_q_bce[2] += 1
+
+        if np.sum(qmask3_qr)==0:
+            empty_q_bce[3] += 1
+
+
+    nonempty_gt = (1-empty_q_gt)>0
+
+    dice_coeffs_qr_gt0 = dice_coeffs_qr_gt[nonempty_gt[:,0],0]
+    dice_coeffs_qr_gt1 = dice_coeffs_qr_gt[nonempty_gt[:,1],1]
+    dice_coeffs_qr_gt2 = dice_coeffs_qr_gt[nonempty_gt[:,2],2]
+    dice_coeffs_qr_gt3 = dice_coeffs_qr_gt[nonempty_gt[:,3],3]
+    
+
+    print(np.mean(dice_coeffs_qr_gt0),np.std(dice_coeffs_qr_gt0))
+    print(np.mean(dice_coeffs_qr_gt1),np.std(dice_coeffs_qr_gt1))
+    print(np.mean(dice_coeffs_qr_gt2),np.std(dice_coeffs_qr_gt2))
+    print(np.mean(dice_coeffs_qr_gt3),np.std(dice_coeffs_qr_gt3))
+
+ 
+    fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharey=True)
+
+    plt.violinplot([dice_coeffs_qr_gt0,dice_coeffs_qr_gt1,dice_coeffs_qr_gt2,dice_coeffs_qr_gt3],positions=range(4))
+    ax1.set_xticks(range(4))
+    plt.draw()
+
+    plt.savefig('violeneplot_qr_vs_qt.pdf')
+    plt.savefig('violeneplot_qr_vs_qt.png')
+
+    plt.show()
+
+
+
+
+    dice_coeffs_bce_gt0 = dice_coeffs_bce_gt[nonempty_gt[:,0],0]
+    dice_coeffs_bce_gt1 = dice_coeffs_bce_gt[nonempty_gt[:,1],1]
+    dice_coeffs_bce_gt2 = dice_coeffs_bce_gt[nonempty_gt[:,2],2]
+    dice_coeffs_bce_gt3 = dice_coeffs_bce_gt[nonempty_gt[:,3],3]
+    
+
+    print(np.mean(dice_coeffs_bce_gt0),np.std(dice_coeffs_bce_gt0))
+    print(np.mean(dice_coeffs_bce_gt1),np.std(dice_coeffs_bce_gt1))
+    print(np.mean(dice_coeffs_bce_gt2),np.std(dice_coeffs_bce_gt2))
+    print(np.mean(dice_coeffs_bce_gt3),np.std(dice_coeffs_bce_gt3))
+
+ 
+    fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharey=True)
+
+    plt.violinplot([dice_coeffs_qr_gt0,dice_coeffs_qr_gt1,dice_coeffs_qr_gt2,dice_coeffs_qr_gt3],positions=range(4))
+    ax1.set_xticks(range(4))
+    plt.draw()
+
+    plt.savefig('violeneplot_bce_vs_qt.pdf')
+    plt.savefig('violeneplot_bce_vs_qt.png')
+
+    plt.show()
+
+
+    # BCE vs QR
+
+    nonempty = np.logical_or((1-empty_q_qr)>0, (1-empty_q_bce)>0)
+
+    dice_coeffs_qr_bce0 = dice_coeffs_qr_bce[nonempty[:,0],0]
+    dice_coeffs_qr_bce1 = dice_coeffs_qr_bce[nonempty[:,1],1]
+    dice_coeffs_qr_bce2 = dice_coeffs_qr_bce[nonempty[:,2],2]
+    dice_coeffs_qr_bce3 = dice_coeffs_qr_bce[nonempty[:,3],3]
+    
+
+    print(np.mean(dice_coeffs_qr_bce0),np.std(dice_coeffs_qr_bce0))
+    print(np.mean(dice_coeffs_qr_bce1),np.std(dice_coeffs_qr_bce1))
+    print(np.mean(dice_coeffs_qr_bce2),np.std(dice_coeffs_qr_bce2))
+    print(np.mean(dice_coeffs_qr_bce3),np.std(dice_coeffs_qr_bce3))
+
+ 
+    fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharey=True)
+
+    plt.violinplot([dice_coeffs_qr_bce0,dice_coeffs_qr_bce1,dice_coeffs_qr_bce2,dice_coeffs_qr_bce3],positions=range(4))
+    ax1.set_xticks(range(4))
+    plt.draw()
+
+    plt.savefig('violeneplot_qr_vs_bce.pdf')
+    plt.savefig('violeneplot_qr_vs_bce.png')
+
     plt.show()
 

@@ -13,6 +13,7 @@ from utils.data_loading import BasicDataset
 from unet import QRUNet_4Q
 from utils.utils import plot_img_and_mask_QR
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 
 def dice_coef(mask1, mask2):
@@ -62,7 +63,7 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    model_file = 'LIDC_4Q_noisy.pth' #LIDC_AAJ_4Q.pth'  #'LIDC_QR_Anand75525.pth'
+    model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q.pth' #LIDC_AAJ_4Q.pth'  #'LIDC_QR_Anand75525.pth'
     net = QRUNet_4Q(n_channels=1, n_classes=2)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -133,3 +134,14 @@ if __name__ == '__main__':
 
     print(np.mean(dice_coeffs, axis=0))
     print(np.std(dice_coeffs, axis=0))
+ 
+    fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharey=True)
+
+    plt.violinplot(dice_coeffs,positions=range(4))
+    ax1.set_xticks(range(4))
+    plt.draw()
+
+    plt.savefig('violeneplot_qr_vs_gt.pdf')
+    plt.savefig('violeneplot_qr_vs_qt.png')
+
+    plt.show()
