@@ -8,9 +8,12 @@ mode = 'train'
 
 subids = glob.glob('/big_disk/ajoshi/LIDC_data/'+mode+'/images/L*/*.png')
 
+subids = subids[:5000]
 
 images = np.zeros((4*len(subids),128,128))
 masks = np.zeros((4*len(subids),128,128))
+
+#subids = 
 
 for i, img_file in enumerate(tqdm(subids)):
 
@@ -45,8 +48,5 @@ for i, img_file in enumerate(tqdm(subids)):
     masks[4*i+1,:,:] = np.array(m1) > 128
     masks[4*i+2,:,:] = np.array(m2) > 128
     masks[4*i+3,:,:] = np.array(m3) > 128
-    # noisy labels
-    if i<len(subids)/8:
-        masks[4*i+3,:,:] = 0
 
-np.savez('/big_disk/ajoshi/LIDC_data/' + mode + '_noisy8.npz', images = images, masks = masks)
+np.savez('/big_disk/ajoshi/LIDC_data/' + mode + '_less_sub_5000.npz', images = images, masks = masks)

@@ -67,8 +67,8 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    model_file_bce = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_BCE_10.pth'
-    model_file_qr = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_4Q_QR_10.pth'
+    model_file_bce = 'LIDC_4Q_BCE.pth'
+    model_file_qr = 'LIDC_4Q_QR.pth'
 
     netqr = QRUNet_4Q(n_channels=1, n_classes=2)
     netbce = QRUNet_4Q(n_channels=1, n_classes=2)

@@ -78,7 +78,7 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load('/big_disk/ajoshi/LIDC_data/train_less_sub_1000.npz')
+    d = np.load('/big_disk/ajoshi/LIDC_data/train_less_sub_250.npz')
     X = d['images']
     M = d['masks']
     X = np.expand_dims(X, axis=3)
@@ -263,7 +263,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_4Q_QR_1000.pth')
+        torch.save(net.state_dict(), 'LIDC_4Q_QR_250.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
