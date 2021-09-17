@@ -67,11 +67,11 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    model_file_bce = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
-    model_file_qr = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q_V2.pth'
+    model_file_bce = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_BCE_10.pth'
+    model_file_qr = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_4Q_QR_10.pth'
 
     netqr = QRUNet_4Q(n_channels=1, n_classes=2)
-    netbce = QRUNet(n_channels=1, n_classes=2)
+    netbce = QRUNet_4Q(n_channels=1, n_classes=2)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     netqr.to(device=device)
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         m2 = np.float32(np.array(m2) > 128)
         m3 = np.float32(np.array(m3) > 128)
 
-        qmask_bce, _, _ = predict_img(net=netbce,
+        qmask_bce, _, _, _ = predict_img_4q(net=netbce,
                                             full_img=image,
                                             scale_factor=0.5,
                                             out_threshold=0.5,
