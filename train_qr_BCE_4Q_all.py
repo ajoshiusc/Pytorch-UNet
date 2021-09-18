@@ -214,7 +214,7 @@ def get_args():
     parser = argparse.ArgumentParser(
         description='Train the UNet on images and target masks')
     parser.add_argument('--epochs', '-e', metavar='E',
-                        type=int, default=5, help='Number of epochs')
+                        type=int, default=20, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
                         metavar='B', type=int, default=40, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
@@ -263,7 +263,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_4Q_BCE.pth')
+        torch.save(net.state_dict(), 'LIDC_4Q_BCE_all.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
