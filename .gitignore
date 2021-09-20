@@ -10,6 +10,7 @@ checkpoints/
 *.yaml
 *.txt
 *.npz
+*.pdf
 venv/
 .idea/
 # Byte-compiled / optimized / DLL files

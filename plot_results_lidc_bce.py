@@ -31,8 +31,8 @@ CONST = 255
 
 sub = 'LIDC-IDRI-0112' #'LIDC-IDRI-0014'#'LIDC-IDRI-0933'
 imname = '262.0'#'132.75' #'135.25'
-sub = 'LIDC-IDRI-0014'
-imname = '135.25'
+#sub = 'LIDC-IDRI-0014'
+#imname = '135.25'
 #model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_4Q.pth'
 #model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
 model_file = '/big_disk/akrami/git_repos_new/QRSegment/LIDC_AAJ_BCE_W.pth'
@@ -115,7 +115,7 @@ image_prob_gt += 0.25*np.float32(m3[:,:,None])
 
 
 # display results
-fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(8, 4))
+fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(8, 4))
 
 ax[0].imshow(img, cmap='gray')
 ax[0].set_title('original image', fontsize=8)
@@ -123,16 +123,17 @@ ax[0].set_title('original image', fontsize=8)
 ax[1].imshow(image_edges, cmap='gray')
 ax[1].set_title(r'R=.125, G=.375, P=.625, Y=0.875', fontsize=8)
 
-ax[2].imshow(image_prob, cmap='gray')
-ax[2].set_title(r'Estimated Pr(lesion)', fontsize=8)
+#ax[2].imshow(image_prob, cmap='gray')
+#ax[2].set_title(r'Estimated Pr(lesion)', fontsize=8)
 
-ax[3].imshow(image_prob_gt, cmap='gray')
-ax[3].set_title(r'Pr(Ground truth)', fontsize=8)
+ax[2].imshow(image_prob_gt, cmap='gray')
+ax[2].set_title(r'Pr(Ground truth)', fontsize=8)
 
 for a in ax:
     a.axis('off')
 
 fig.tight_layout()
+plt.savefig('BCE_Unet.pdf')
 
 plt.show()
 
