@@ -126,6 +126,9 @@ def train_net(net,
     #criterion = QRcost # BCEqr #
     global_step = 0
 
+    loss_epochs = np.zeros(epochs)
+    val_dice_epochs = np.zeros(epochs)
+
     # 5. Begin training
     for epoch in range(epochs):
 
@@ -203,11 +206,23 @@ def train_net(net,
                         **histograms
                     })
 
+        loss_epochs[epoch] = epoch_loss
+        val_dice_epochs[epoch] = np.array(val_score.cpu())
+
+
+        if epoch == 0:
+            torch.save(net.state_dict(), 'LIDC_4Q_QR_all_init0.pth')
+
+
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
             torch.save(net.state_dict(), str(dir_checkpoint /
                        'checkpoint_epoch{}.pth'.format(epoch + 1)))
             logging.info(f'Checkpoint {epoch + 1} saved!')
+
+    np.savez('loss_dice_epochs_qr_LOIDC_4Q.npz',loss_epochs=loss_epochs,val_dice_epochs=val_dice_epochs)
+
+
 
 
 def get_args():

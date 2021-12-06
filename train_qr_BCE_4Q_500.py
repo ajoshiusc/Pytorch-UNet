@@ -203,6 +203,10 @@ def train_net(net,
                         **histograms
                     })
 
+ 
+        if epoch == 0:
+            torch.save(net.state_dict(), 'LIDC_4Q_BCE_0.pth')
+
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
             torch.save(net.state_dict(), str(dir_checkpoint /
