@@ -1,5 +1,5 @@
 from unet_blocks import *
-from unet import Unet
+from unet_prob import Unet
 from utils import init_weights,init_weights_orthogonal_normal, l2_regularisation
 import torch.nn.functional as F
 from torch.distributions import Normal, Independent, kl
@@ -179,7 +179,7 @@ class ProbabilisticUnet(nn.Module):
     """
     A probabilistic UNet (https://arxiv.org/abs/1806.05034) implementation.
     input_channels: the number of channels in the image (1 for greyscale and 3 for RGB)
-    num_classes: the number of classes to predict
+    n_classes: the number of classes to predict
     num_filters: is a list consisint of the amount of filters layer
     latent_dim: dimension of the latent space
     no_cons_per_block: no convs per block in the (convolutional) encoder of prior and posterior
@@ -188,7 +188,7 @@ class ProbabilisticUnet(nn.Module):
     def __init__(self, input_channels=1, num_classes=1, num_filters=[32,64,128,192], latent_dim=6, no_convs_fcomb=4, beta=10.0):
         super(ProbabilisticUnet, self).__init__()
         self.input_channels = input_channels
-        self.num_classes = num_classes
+        self.n_classes = num_classes
         self.num_filters = num_filters
         self.latent_dim = latent_dim
         self.no_convs_per_block = 3
@@ -197,10 +197,10 @@ class ProbabilisticUnet(nn.Module):
         self.beta = beta
         self.z_prior_sample = 0
 
-        self.unet = Unet(self.input_channels, self.num_classes, self.num_filters, self.initializers, apply_last_layer=False, padding=True).to(device)
+        self.unet = Unet(self.input_channels, self.n_classes , self.num_filters, self.initializers, apply_last_layer=False, padding=True).to(device)
         self.prior = AxisAlignedConvGaussian(self.input_channels, self.num_filters, self.no_convs_per_block, self.latent_dim,  self.initializers,).to(device)
         self.posterior = AxisAlignedConvGaussian(self.input_channels, self.num_filters, self.no_convs_per_block, self.latent_dim, self.initializers, posterior=True).to(device)
-        self.fcomb = Fcomb(self.num_filters, self.latent_dim, self.input_channels, self.num_classes, self.no_convs_fcomb, {'w':'orthogonal', 'b':'normal'}, use_tile=True).to(device)
+        self.fcomb = Fcomb(self.num_filters, self.latent_dim, self.input_channels,   self.n_classes , self.no_convs_fcomb, {'w':'orthogonal', 'b':'normal'}, use_tile=True).to(device)
 
     def forward(self, patch, segm, training=True):
         """
@@ -222,8 +222,8 @@ class ProbabilisticUnet(nn.Module):
             self.z_prior_sample = z_prior
         else:
             #You can choose whether you mean a sample or the mean here. For the GED it is important to take a sample.
-            #z_prior = self.prior_latent_space.base_dist.loc 
-            z_prior = self.prior_latent_space.sample()
+            z_prior = self.prior_latent_space.base_dist.loc 
+            #z_prior = self.prior_latent_space.sample()
             self.z_prior_sample = z_prior
         return self.fcomb.forward(self.unet_features,z_prior)
 

@@ -11,8 +11,8 @@ from torch import optim
 from torch.utils.data import DataLoader, random_split, TensorDataset
 from tqdm import tqdm
 
-from utils.data_loading import BasicDataset, CarvanaDataset
-from utils.dice_score import dice_loss
+from util.data_loading import BasicDataset, CarvanaDataset
+from util.dice_score import dice_loss
 from evaluate import evaluate_grayscale_QR_4Q
 from unet import QRUNet_4Q
 import numpy as np

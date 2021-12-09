@@ -11,9 +11,9 @@ from torch import optim
 from torch.utils.data import DataLoader, random_split, TensorDataset
 from tqdm import tqdm
 
-from utils.data_loading import BasicDataset, CarvanaDataset
-from utils.dice_score import dice_loss
-from evaluate import evaluate_grayscale_QR_4Q
+from util.data_loading import BasicDataset, CarvanaDataset
+from util.dice_score import dice_loss
+from evaluate import evaluate_grayscale_prob
 import numpy as np
 import torch
 import numpy as np
@@ -78,14 +78,14 @@ def train_net(net,
               device,
               epochs: int = 5,
               batch_size: int = 1,
-              learning_rate: float = 1e-6, #0.001,
+              learning_rate: float = 1e-4, #0.001,
               val_percent: float = 0.1,
               save_checkpoint: bool = True,
               img_scale: float = 0.5,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load('/big_disk/ajoshi/LIDC_data/train_less_sub_1000.npz')
+    d = np.load = np.load('/big_disk/ajoshi/LIDC_data/train.npz')
     X = d['images']
     M = d['masks']
     X = np.expand_dims(X, axis=3)
@@ -146,22 +146,25 @@ def train_net(net,
                     (0, 3, 1, 2))  # ['image']
                 true_masks = batch[:, :, :, 1]  # batch['mask']
 
-                assert images.shape[1] == net.n_channels, \
-                    f'Network has been defined with {net.n_channels} input channels, ' \
-                    f'but loaded images have {images.shape[1]} channels. Please check that ' \
-                    'the images are loaded correctly.'
+                #assert images.shape[1] == net.n_channels, \
+                    #f'Network has been defined with {net.n_channels} input channels, ' \
+                    #f'but loaded images have {images.shape[1]} channels. Please check that ' \
+                   # 'the images are loaded correctly.'
 
                 images = images.to(device=device, dtype=torch.float32)
                 true_masks = true_masks.to(device=device, dtype=torch.float32)
 
                 true_masks = torch.unsqueeze(true_masks,1)
                 net.forward(images, true_masks, training=True)
+                masks_pred1=(F.sigmoid(net.sample(testing=True)) > 0.5).float()
                 elbo = net.elbo(true_masks)
                 reg_loss = l2_regularisation(net.posterior) + l2_regularisation(net.prior) + l2_regularisation(net.fcomb.layers)
                 loss = -elbo + 1e-5 * reg_loss
                 optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+                if loss==loss:
+                    loss.backward()
+                    optimizer.step()
+                
                     # + dice_loss(F.softmax(masks_pred, dim=1).float(),
                     #             F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
                     #             multiclass=True)
@@ -191,7 +194,7 @@ def train_net(net,
                         histograms['Gradients/' +
                                    tag] = wandb.Histogram(value.grad.data.cpu())
 
-                    val_score = evaluate_grayscale_QR_4Q(net, val_loader, device)
+                    val_score = evaluate_grayscale_prob(net, val_loader, device)
                     #scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
@@ -201,10 +204,8 @@ def train_net(net,
                         'images': wandb.Image(images[0, 0].cpu()),
                         'masks': {
                             'true': wandb.Image(true_masks[0].float().cpu()),
-                            'pred1': wandb.Image((masks_pred1[0, 1] > 0.5).float().cpu()),
-                            'pred2': wandb.Image((masks_pred2[0, 1] > 0.5).float().cpu()),
-                            'pred3': wandb.Image((masks_pred3[0, 1] > 0.5).float().cpu()),
-                            'pred4': wandb.Image((masks_pred4[0, 1] > 0.5).float().cpu()),
+                            'pred1': wandb.Image((masks_pred1[0, 0] > 0.5).float().cpu()),
+
                         },
                         'step': global_step,
                         'epoch': epoch,
@@ -254,10 +255,10 @@ if __name__ == '__main__':
 
 
 
-    logging.info(f'Network:\n'
-                 f'\t{net.n_channels} input channels\n'
-                 f'\t{net.n_classes} output channels (classes)\n'
-                 f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
+    #logging.info(f'Network:\n'
+                 #f'\t{net.n_channels} input channels\n'
+                # f'\t{net.n_classes} output channels (classes)\n'
+                 #f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
 
     if args.load:
         net.load_state_dict(torch.load(args.load, map_location=device))
@@ -273,7 +274,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_4Q_BCE_1000.pth')
+        torch.save(net.state_dict(), 'LIDC_4Q_BCE_prob.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
