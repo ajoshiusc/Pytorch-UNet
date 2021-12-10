@@ -86,7 +86,7 @@ def train_net(net,
     # 1. Create dataset
 
     d = np.load = np.load('/big_disk/ajoshi/LIDC_data/train.npz')
-    X = d['images']
+    X = d['images']*.7
     M = d['masks']
     X = np.expand_dims(X, axis=3)
     M = np.expand_dims(M, axis=3)
@@ -225,8 +225,8 @@ def get_args():
     parser.add_argument('--epochs', '-e', metavar='E',
                         type=int, default=5, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=40, help='Batch size')
-    parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.00001,
+                        metavar='B', type=int, default=10, help='Batch size')
+    parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.0000001,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
                         default=False, help='Load model from a .pth file')
