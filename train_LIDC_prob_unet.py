@@ -29,51 +29,6 @@ dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
 
-Q1 = 0.875 # 0.9 #0.75
-Q2 = 0.625 #0.8# 0.5
-Q3 = 0.375 #0.75 #0.25
-Q4 = 0.125
-
-
-
-def BCEqr_W(P, Y, q):
-    q= 166
-    L = q*Y*torch.log2(P+1e-16) + (1.0-Y)*torch.log2(1.0-P+1e-16)
-
-    return torch.sum(-L)
-
-def BCEqr(P, Y, q):
-    q= 0.5
-    L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
-
-    return torch.sum(-L)
-
-# This is the new cost function
-
-
-def QRcost_new(f, Y, q=0.5):
-    error = f - Y
-    smaller_index = error < 0
-    bigger_index = 0 < error
-    loss = q * torch.sum(torch.abs(error)[smaller_index]) + (1-q) * torch.sum(torch.abs(error)[bigger_index])
-
-    return torch.sum(loss)
-
-
-def QRcost_warmup(f, Y, q=0.5, h=0.1):
-    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    q=0.625
-    L = (Y - (1.0-q))*(f)
-
-    return torch.sum(-L)
-
-def QRcost(f, Y, q=0.5, h=0.1):
-    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    L = (Y - (1.0-q))*(f)
-
-    return torch.sum(-L)
-
-
 def train_net(net,
               device,
               epochs: int = 5,
@@ -132,11 +87,6 @@ def train_net(net,
 
     # 5. Begin training
     for epoch in range(epochs):
-
-        if epoch<1:
-            criterion = BCEqr_W
-        else:
-            criterion = BCEqr#QRcost
 
         net.train()
         epoch_loss = 0
