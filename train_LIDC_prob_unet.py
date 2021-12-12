@@ -94,7 +94,7 @@ def train_net(net,
             for batch in train_loader:
                 images = batch[:, :, :, np.newaxis, 0].permute(
                     (0, 3, 1, 2))  # ['image']
-                true_masks = batch[:, :, :, 1]  # batch['mask']
+                true_masks = 0.99995*batch[:, :, :, 1] +1e-8 # batch['mask']
 
                 #assert images.shape[1] == net.n_channels, \
                     #f'Network has been defined with {net.n_channels} input channels, ' \
