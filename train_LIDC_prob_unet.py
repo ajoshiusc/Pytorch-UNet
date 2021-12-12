@@ -6,7 +6,6 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import wandb
 from torch import optim
 from torch.utils.data import DataLoader, random_split, TensorDataset
 from tqdm import tqdm
@@ -24,8 +23,6 @@ from utils import l2_regularisation
 
 
 
-dir_img = Path('./data/imgs/')
-dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
 
@@ -40,7 +37,7 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load = np.load('/big_disk/ajoshi/LIDC_data/train.npz')
+    d = np.load = np.load('train.npz')
     X = d['images']*.7
     M = d['masks']
     X = np.expand_dims(X, axis=3)
@@ -51,20 +48,13 @@ def train_net(net,
     # 2. Split into train / validation partitions
     n_val = int(len(X) * val_percent)
     n_train = len(X) - n_val
-    train_set, val_set = random_split(
-        X, [n_train, n_val], generator=torch.Generator().manual_seed(0))
+    train_set, val_set = random_split(X, [n_train, n_val])
 
     # 3. Create data loaders
     loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)
     train_loader = DataLoader(train_set, shuffle=False, **loader_args)
     val_loader = DataLoader(val_set, shuffle=False,
                             drop_last=True, **loader_args)
-
-    # (Initialize logging)
-    experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
-    experiment.config.update(dict(epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
-                                  val_percent=val_percent, save_checkpoint=save_checkpoint, img_scale=img_scale,
-                                  amp=amp))
 
     logging.info(f'''Starting training:
         Epochs:          {epochs}
@@ -127,11 +117,6 @@ def train_net(net,
                 pbar.update(images.shape[0])
                 global_step += 1
                 epoch_loss += loss.item()
-                experiment.log({
-                    'train loss': loss.item(),
-                    'step': global_step,
-                    'epoch': epoch
-                })
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
 
                 # Evaluation round
@@ -139,28 +124,11 @@ def train_net(net,
                     histograms = {}
                     for tag, value in net.named_parameters():
                         tag = tag.replace('/', '.')
-                        histograms['Weights/' +
-                                   tag] = wandb.Histogram(value.data.cpu())
-                        histograms['Gradients/' +
-                                   tag] = wandb.Histogram(value.grad.data.cpu())
 
                     val_score = evaluate_grayscale_prob(net, val_loader, device)
                     #scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
-                    experiment.log({
-                        'learning rate': optimizer.param_groups[0]['lr'],
-                        'validation Dice': val_score,
-                        'images': wandb.Image(images[0, 0].cpu()),
-                        'masks': {
-                            'true': wandb.Image(true_masks[0].float().cpu()),
-                            'pred1': wandb.Image((masks_pred1[0, 0] > 0.5).float().cpu()),
-
-                        },
-                        'step': global_step,
-                        'epoch': epoch,
-                        **histograms
-                    })
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
@@ -192,6 +160,7 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
+    torch.manual_seed(0)
 
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)s: %(message)s')
