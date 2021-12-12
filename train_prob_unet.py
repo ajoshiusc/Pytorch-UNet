@@ -85,8 +85,8 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load = np.load('/big_disk/ajoshi/LIDC_data/train.npz')
-    X = d['images']*.7
+    d = np.load = np.load('train.npz')
+    X = d['images']*.99
     M = d['masks']
     X = np.expand_dims(X, axis=3)
     M = np.expand_dims(M, axis=3)
@@ -96,8 +96,8 @@ def train_net(net,
     # 2. Split into train / validation partitions
     n_val = int(len(X) * val_percent)
     n_train = len(X) - n_val
-    train_set, val_set = random_split(
-        X, [n_train, n_val], generator=torch.Generator().manual_seed(0))
+
+    train_set, val_set = random_split(X, [n_train, n_val])
 
     # 3. Create data loaders
     loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)
@@ -253,6 +253,7 @@ if __name__ == '__main__':
     # n_classes is the number of probabilities you want to get per pixel
     net = ProbabilisticUnet(input_channels=1, num_classes=1, num_filters=[32,64,128,192], latent_dim=2, no_convs_fcomb=4, beta=10.0)
 
+    torch.manual_seed(0)
 
 
     #logging.info(f'Network:\n'
