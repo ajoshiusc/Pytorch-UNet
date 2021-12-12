@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import wandb
+#import wandb
 from torch import optim
 from torch.utils.data import DataLoader, random_split, TensorDataset
 from tqdm import tqdm
@@ -106,10 +106,10 @@ def train_net(net,
                             drop_last=True, **loader_args)
 
     # (Initialize logging)
-    experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
-    experiment.config.update(dict(epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
-                                  val_percent=val_percent, save_checkpoint=save_checkpoint, img_scale=img_scale,
-                                  amp=amp))
+    #experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
+    #experiment.config.update(dict(epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
+    #                              val_percent=val_percent, save_checkpoint=save_checkpoint, img_scale=img_scale,
+    #                              amp=amp))
 
     logging.info(f'''Starting training:
         Epochs:          {epochs}
@@ -205,7 +205,6 @@ def train_net(net,
                         'masks': {
                             'true': wandb.Image(true_masks[0].float().cpu()),
                             'pred1': wandb.Image((masks_pred1[0, 0] > 0.5).float().cpu()),
-
                         },
                         'step': global_step,
                         'epoch': epoch,
@@ -256,10 +255,10 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
 
-    #logging.info(f'Network:\n'
-                 #f'\t{net.n_channels} input channels\n'
-                # f'\t{net.n_classes} output channels (classes)\n'
-                 #f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
+    logging.info(f'Network:\n'
+                 f'\t{net.n_channels} input channels\n'
+                 f'\t{net.n_classes} output channels (classes)\n'
+                 f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
 
     if args.load:
         net.load_state_dict(torch.load(args.load, map_location=device))
