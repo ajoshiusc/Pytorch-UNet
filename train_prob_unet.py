@@ -86,7 +86,7 @@ def train_net(net,
     # 1. Create dataset
 
     d = np.load = np.load('train.npz')
-    X = d['images']*.99
+    X = d['images']*.7
     M = d['masks']
     X = np.expand_dims(X, axis=3)
     M = np.expand_dims(M, axis=3)
@@ -147,9 +147,9 @@ def train_net(net,
                 true_masks = batch[:, :, :, 1]  # batch['mask']
 
                 #assert images.shape[1] == net.n_channels, \
-                    #f'Network has been defined with {net.n_channels} input channels, ' \
-                    #f'but loaded images have {images.shape[1]} channels. Please check that ' \
-                   # 'the images are loaded correctly.'
+                #f'Network has been defined with {net.n_channels} input channels, ' \
+                #f'but loaded images have {images.shape[1]} channels. Please check that ' \
+                # 'the images are loaded correctly.'
 
                 images = images.to(device=device, dtype=torch.float32)
                 true_masks = true_masks.to(device=device, dtype=torch.float32)
@@ -164,24 +164,24 @@ def train_net(net,
                 if loss==loss:
                     loss.backward()
                     optimizer.step()
-                
+
                     # + dice_loss(F.softmax(masks_pred, dim=1).float(),
                     #             F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
                     #             multiclass=True)
 
                 #optimizer.zero_grad(set_to_none=True)
-                    #grad_scaler.scale(loss).backward()
+                #grad_scaler.scale(loss).backward()
                 #grad_scaler.step(optimizer)
                 #grad_scaler.update()
 
                 pbar.update(images.shape[0])
                 global_step += 1
                 epoch_loss += loss.item()
-                experiment.log({
-                    'train loss': loss.item(),
-                    'step': global_step,
-                    'epoch': epoch
-                })
+                #experiment.log({
+                #    'train loss': loss.item(),
+                #    'step': global_step,
+                #    'epoch': epoch
+                #})
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
 
                 # Evaluation round
@@ -189,27 +189,27 @@ def train_net(net,
                     histograms = {}
                     for tag, value in net.named_parameters():
                         tag = tag.replace('/', '.')
-                        histograms['Weights/' +
-                                   tag] = wandb.Histogram(value.data.cpu())
-                        histograms['Gradients/' +
-                                   tag] = wandb.Histogram(value.grad.data.cpu())
+                        # histograms['Weights/' + tag] = wandb.Histogram(
+                        #     value.data.cpu())
+                        # histograms['Gradients/' + tag] = wandb.Histogram(
+                        #     value.grad.data.cpu())
 
                     val_score = evaluate_grayscale_prob(net, val_loader, device)
                     #scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
-                    experiment.log({
-                        'learning rate': optimizer.param_groups[0]['lr'],
-                        'validation Dice': val_score,
-                        'images': wandb.Image(images[0, 0].cpu()),
-                        'masks': {
-                            'true': wandb.Image(true_masks[0].float().cpu()),
-                            'pred1': wandb.Image((masks_pred1[0, 0] > 0.5).float().cpu()),
-                        },
-                        'step': global_step,
-                        'epoch': epoch,
-                        **histograms
-                    })
+                    # experiment.log({
+                    #     'learning rate': optimizer.param_groups[0]['lr'],
+                    #     'validation Dice': val_score,
+                    #     'images': wandb.Image(images[0, 0].cpu()),
+                    #     'masks': {
+                    #         'true': wandb.Image(true_masks[0].float().cpu()),
+                    #         'pred1': wandb.Image((masks_pred1[0, 0] > 0.5).float().cpu()),
+                    #     },
+                    #     'step': global_step,
+                    #     'epoch': epoch,
+                    #     **histograms
+                    # })
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
@@ -255,10 +255,10 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
 
-    logging.info(f'Network:\n'
-                 f'\t{net.n_channels} input channels\n'
-                 f'\t{net.n_classes} output channels (classes)\n'
-                 f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
+    #logging.info(f'Network:\n'
+    #             f'\t{net.n_channels} input channels\n'
+    #             f'\t{net.n_classes} output channels (classes)\n'
+    #             f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
 
     if args.load:
         net.load_state_dict(torch.load(args.load, map_location=device))
