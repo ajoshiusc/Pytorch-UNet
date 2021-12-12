@@ -38,7 +38,7 @@ def train_net(net,
     # 1. Create dataset
 
     d = np.load = np.load('train.npz')
-    X = d['images']*.995
+    X = d['images']*.7 + 1e-4
     M = d['masks']
     X = np.expand_dims(X, axis=3)
     M = np.expand_dims(M, axis=3)
@@ -143,8 +143,8 @@ def get_args():
     parser.add_argument('--epochs', '-e', metavar='E',
                         type=int, default=5, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=8, help='Batch size')
-    parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.0000001,
+                        metavar='B', type=int, default=4, help='Batch size')
+    parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-6,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
                         default=False, help='Load model from a .pth file')
@@ -160,7 +160,7 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
-    torch.manual_seed(0)
+    torch.manual_seed(11)
 
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)s: %(message)s')

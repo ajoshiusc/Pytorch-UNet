@@ -6,6 +6,11 @@ from torch.distributions import Normal, Independent, kl
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+
+def BCELoss(input, target):
+    L = target*torch.log2(input) + (1.0-target)*torch.log2(1.0-input)
+    return torch.sum(-L)
+
 class Encoder(nn.Module):
     """
     A convolutional neural network, consisting of len(num_filters) times a block of no_convs_per_block convolutional layers,
@@ -138,6 +143,8 @@ class Fcomb(nn.Module):
             self.layers = nn.Sequential(*layers)
 
             self.last_layer = nn.Conv2d(self.num_filters[0], self.num_classes, kernel_size=1)
+            self.last_layer_sigmoid = nn.Sigmoid()
+
 
             if initializers['w'] == 'orthogonal':
                 self.layers.apply(init_weights_orthogonal_normal)
@@ -173,6 +180,7 @@ class Fcomb(nn.Module):
             feature_map = torch.cat((feature_map, z), dim=self.channel_axis)
             output = self.layers(feature_map)
             return self.last_layer(output)
+            #return 3.0*(self.last_layer_sigmoid(self.last_layer(output))-.5)
 
 
 class ProbabilisticUnet(nn.Module):
@@ -263,7 +271,9 @@ class ProbabilisticUnet(nn.Module):
         Calculate the evidence lower bound of the log-likelihood of P(Y|X)
         """
 
-        criterion = nn.BCEWithLogitsLoss(size_average = False, reduce=False, reduction=None)
+        criterion = nn.BCEWithLogitsLoss(size_average = False, reduce=False, reduction='mean')
+        #criterion = BCELoss #nn.BCELoss(size_average = False, reduce=False, reduction=None)
+
         z_posterior = self.posterior_latent_space.rsample()
         
         self.kl = torch.mean(self.kl_divergence(analytic=analytic_kl, calculate_posterior=False, z_posterior=z_posterior))
