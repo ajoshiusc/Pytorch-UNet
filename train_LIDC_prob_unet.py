@@ -38,7 +38,7 @@ def train_net(net,
     # 1. Create dataset
 
     d = np.load = np.load('train.npz')
-    X = d['images']*.7
+    X = d['images']*.995
     M = d['masks']
     X = np.expand_dims(X, axis=3)
     M = np.expand_dims(M, axis=3)
@@ -84,7 +84,7 @@ def train_net(net,
             for batch in train_loader:
                 images = batch[:, :, :, np.newaxis, 0].permute(
                     (0, 3, 1, 2))  # ['image']
-                true_masks = 0.99995*batch[:, :, :, 1] +1e-8 # batch['mask']
+                true_masks = 0.9995*batch[:, :, :, 1] +1e-4 # batch['mask']
 
                 #assert images.shape[1] == net.n_channels, \
                     #f'Network has been defined with {net.n_channels} input channels, ' \
@@ -143,7 +143,7 @@ def get_args():
     parser.add_argument('--epochs', '-e', metavar='E',
                         type=int, default=5, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=4, help='Batch size')
+                        metavar='B', type=int, default=8, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.0000001,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
