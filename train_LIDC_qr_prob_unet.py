@@ -6,7 +6,6 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import wandb
 from torch import optim
 from torch.utils.data import DataLoader, random_split, TensorDataset
 from tqdm import tqdm
@@ -24,54 +23,7 @@ from utils import l2_regularisation
 
 
 
-dir_img = Path('./data/imgs/')
-dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
-
-
-Q1 = 0.875 # 0.9 #0.75
-Q2 = 0.625 #0.8# 0.5
-Q3 = 0.375 #0.75 #0.25
-Q4 = 0.125
-
-
-
-def BCEqr_W(P, Y, q):
-    q= 166
-    L = q*Y*torch.log2(P+1e-16) + (1.0-Y)*torch.log2(1.0-P+1e-16)
-
-    return torch.sum(-L)
-
-def BCEqr(P, Y, q):
-    q= 0.5
-    L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
-
-    return torch.sum(-L)
-
-# This is the new cost function
-
-
-def QRcost_new(f, Y, q=0.5):
-    error = f - Y
-    smaller_index = error < 0
-    bigger_index = 0 < error
-    loss = q * torch.sum(torch.abs(error)[smaller_index]) + (1-q) * torch.sum(torch.abs(error)[bigger_index])
-
-    return torch.sum(loss)
-
-
-def QRcost_warmup(f, Y, q=0.5, h=0.1):
-    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    q=0.625
-    L = (Y - (1.0-q))*(f)
-
-    return torch.sum(-L)
-
-def QRcost(f, Y, q=0.5, h=0.1):
-    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    L = (Y - (1.0-q))*(f)
-
-    return torch.sum(-L)
 
 
 def train_net(net,
@@ -85,8 +37,8 @@ def train_net(net,
               amp: bool = False):
     # 1. Create dataset
 
-    d = np.load = np.load('/big_disk/ajoshi/LIDC_data/train.npz')
-    X = d['images']*.7
+    d = np.load = np.load('train.npz')
+    X = d['images']*.7 + 1e-4
     M = d['masks']
     X = np.expand_dims(X, axis=3)
     M = np.expand_dims(M, axis=3)
@@ -96,20 +48,13 @@ def train_net(net,
     # 2. Split into train / validation partitions
     n_val = int(len(X) * val_percent)
     n_train = len(X) - n_val
-    train_set, val_set = random_split(
-        X, [n_train, n_val], generator=torch.Generator().manual_seed(0))
+    train_set, val_set = random_split(X, [n_train, n_val])
 
     # 3. Create data loaders
     loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)
     train_loader = DataLoader(train_set, shuffle=False, **loader_args)
     val_loader = DataLoader(val_set, shuffle=False,
                             drop_last=True, **loader_args)
-
-    # (Initialize logging)
-    experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
-    experiment.config.update(dict(epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
-                                  val_percent=val_percent, save_checkpoint=save_checkpoint, img_scale=img_scale,
-                                  amp=amp))
 
     logging.info(f'''Starting training:
         Epochs:          {epochs}
@@ -133,18 +78,13 @@ def train_net(net,
     # 5. Begin training
     for epoch in range(epochs):
 
-        if epoch<1:
-            criterion = BCEqr_W
-        else:
-            criterion = QRcost#QRcost
-
         net.train()
         epoch_loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img') as pbar:
             for batch in train_loader:
                 images = batch[:, :, :, np.newaxis, 0].permute(
                     (0, 3, 1, 2))  # ['image']
-                true_masks = batch[:, :, :, 1]  # batch['mask']
+                true_masks = 0.9995*batch[:, :, :, 1] +1e-4 # batch['mask']
 
                 #assert images.shape[1] == net.n_channels, \
                     #f'Network has been defined with {net.n_channels} input channels, ' \
@@ -177,11 +117,6 @@ def train_net(net,
                 pbar.update(images.shape[0])
                 global_step += 1
                 epoch_loss += loss.item()
-                experiment.log({
-                    'train loss': loss.item(),
-                    'step': global_step,
-                    'epoch': epoch
-                })
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
 
                 # Evaluation round
@@ -189,28 +124,11 @@ def train_net(net,
                     histograms = {}
                     for tag, value in net.named_parameters():
                         tag = tag.replace('/', '.')
-                        histograms['Weights/' +
-                                   tag] = wandb.Histogram(value.data.cpu())
-                        histograms['Gradients/' +
-                                   tag] = wandb.Histogram(value.grad.data.cpu())
 
                     val_score = evaluate_grayscale_prob(net, val_loader, device)
                     #scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
-                    experiment.log({
-                        'learning rate': optimizer.param_groups[0]['lr'],
-                        'validation Dice': val_score,
-                        'images': wandb.Image(images[0, 0].cpu()),
-                        'masks': {
-                            'true': wandb.Image(true_masks[0].float().cpu()),
-                            'pred1': wandb.Image((masks_pred1[0, 0] > 0.5).float().cpu()),
-
-                        },
-                        'step': global_step,
-                        'epoch': epoch,
-                        **histograms
-                    })
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
@@ -223,10 +141,10 @@ def get_args():
     parser = argparse.ArgumentParser(
         description='Train the UNet on images and target masks')
     parser.add_argument('--epochs', '-e', metavar='E',
-                        type=int, default=5, help='Number of epochs')
+                        type=int, default=20, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=10, help='Batch size')
-    parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=0.0000001,
+                        metavar='B', type=int, default=4, help='Batch size')
+    parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-6,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
                         default=False, help='Load model from a .pth file')
@@ -242,6 +160,7 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
+    torch.manual_seed(11)
 
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)s: %(message)s')
@@ -274,8 +193,8 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_QR_PROB_UNET.pth')
+        torch.save(net.state_dict(), 'LIDC_4Q_BCE_prob_'+args.epochs+'.pth')
     except KeyboardInterrupt:
-        torch.save(net.state_dict(), 'INTERRUPTED_LIDC_4Q_QR_prob.pth')
+        torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
         sys.exit(0)
