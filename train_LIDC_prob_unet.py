@@ -23,7 +23,7 @@ from utils import l2_regularisation
 
 
 
-dir_checkpoint = Path('./checkpoints/')
+dir_checkpoint = Path('./checkpoints_LIDC_prob_unet/')
 
 
 def train_net(net,
@@ -193,7 +193,7 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_4Q_BCE_prob_'+args.epochs+'.pth')
+        torch.save(net.state_dict(), 'LIDC_4Q_BCE_prob_'+str(args.epochs)+'.pth')
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
