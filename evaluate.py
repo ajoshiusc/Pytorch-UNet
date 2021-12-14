@@ -233,6 +233,36 @@ def evaluate_grayscale_prob(net, dataloader, device):
             mask_pred=net.sample(testing=True)
             # convert to one-hot format
             if net.n_classes == 1:
+                mask_pred = (F.Sigmoid(mask_pred) > 0.5).float()
+            else:
+                mask_pred = (F.one_hot(mask_pred.argmax(dim=1), net.n_classes+1).permute(0, 3, 1, 2)>0.5).float()
+
+            # compute the Dice score, ignoring background
+            dice_score += multiclass_dice_coeff(mask_pred[:, 0:1, ...], true_masks[:, 0:1, ...], reduce_batch_first=False)
+
+    net.train()
+    return dice_score / num_val_batches
+
+
+def evaluate_grayscale_QR_prob(net, dataloader, device):
+    net.eval()
+    num_val_batches = len(dataloader)
+    dice_score = 0
+
+    # iterate over the validation set
+    for batch in tqdm(dataloader, total=num_val_batches, desc='Validation round', unit='batch', leave=False):
+        image, true_masks = batch[:,:,:,np.newaxis,0].permute((0,3,1,2)), batch[:,:,:,1]
+        # move images and labels to correct device and type
+        image = image.to(device=device, dtype=torch.float32)
+        true_masks = true_masks.to(device=device, dtype=torch.float32)
+        true_masks = torch.unsqueeze(true_masks,1)
+
+        with torch.no_grad():
+            # predict the mask
+            net.forward(image, true_masks, training=True)
+            _, _, mask_pred, _ = net.sample(testing=True)
+            # convert to one-hot format
+            if net.n_classes == 1:
                 mask_pred = (F.sigmoid(mask_pred) > 0.5).float()
             else:
                 mask_pred = (F.one_hot(mask_pred.argmax(dim=1), net.n_classes+1).permute(0, 3, 1, 2)>0.5).float()

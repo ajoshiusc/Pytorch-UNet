@@ -12,18 +12,18 @@ from tqdm import tqdm
 
 from util.data_loading import BasicDataset, CarvanaDataset
 from util.dice_score import dice_loss
-from evaluate import evaluate_grayscale_prob
+from evaluate import evaluate_grayscale_QR_prob
 import numpy as np
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
-from probabilistic_unet import ProbabilisticUnet
+from probabilistic_QRunet import ProbabilisticQRUnet
 from utils import l2_regularisation
 
 
 
-dir_checkpoint = Path('./checkpoints/')
+dir_checkpoint = Path('./checkpoints_LIDC_QR_prob_unet/')
 
 
 def train_net(net,
@@ -69,7 +69,7 @@ def train_net(net,
     ''')
 
     # 4. Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-5) #, weight_decay=0)
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
     #criterion = QRcost # BCEqr #
@@ -96,8 +96,8 @@ def train_net(net,
 
                 true_masks = torch.unsqueeze(true_masks,1)
                 net.forward(images, true_masks, training=True)
-                masks_pred1=(F.sigmoid(net.sample(testing=True)) > 0.5).float()
-                elbo = net.elbo(true_masks)
+                #masks_pred1=(F.sigmoid(net.sample(testing=True)) > 0.5).float()
+                elbo = net.elbo(true_masks, epoch=10)
                 reg_loss = l2_regularisation(net.posterior) + l2_regularisation(net.prior) + l2_regularisation(net.fcomb.layers)
                 loss = -elbo + 1e-5 * reg_loss
                 optimizer.zero_grad()
@@ -125,7 +125,7 @@ def train_net(net,
                     for tag, value in net.named_parameters():
                         tag = tag.replace('/', '.')
 
-                    val_score = evaluate_grayscale_prob(net, val_loader, device)
+                    val_score = evaluate_grayscale_QR_prob(net, val_loader, device)
                     #scheduler.step(val_score)
 
                     logging.info('Validation Dice score: {}'.format(val_score))
@@ -143,7 +143,7 @@ def get_args():
     parser.add_argument('--epochs', '-e', metavar='E',
                         type=int, default=20, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
-                        metavar='B', type=int, default=4, help='Batch size')
+                        metavar='B', type=int, default=24, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-6,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = ProbabilisticUnet(input_channels=1, num_classes=1, num_filters=[32,64,128,192], latent_dim=2, no_convs_fcomb=4, beta=10.0)
+    net = ProbabilisticQRUnet(input_channels=1, num_classes=1, num_filters=[32,64,128,192], latent_dim=2, no_convs_fcomb=4, beta=10.0)
 
 
 
@@ -193,8 +193,8 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_4Q_BCE_prob_'+args.epochs+'.pth')
+        torch.save(net.state_dict(), 'LIDC_QR_prob_'+str(args.epochs)+'.pth')
     except KeyboardInterrupt:
-        torch.save(net.state_dict(), 'INTERRUPTED.pth')
+        torch.save(net.state_dict(), 'LIDC_QR_prob_INTERRUPTED.pth')
         logging.info('Saved interrupt')
         sys.exit(0)

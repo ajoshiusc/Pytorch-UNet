@@ -37,7 +37,7 @@ def BCEqr_W(P, Y, q):
 
 def BCEqr(P, Y, q):
     q= 0.5
-    L = q*Y*torch.log2(P+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-P+1e-16)
+    L = q*Y*torch.log2(F.sigmoid(P)+1e-16) + (1.0-q)*(1.0-Y)*torch.log2(1.0-F.sigmoid(P)+1e-16)
 
     return torch.sum(-L)
 

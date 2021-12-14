@@ -13,7 +13,7 @@ from util.data_loading import BasicDataset
 from util.utils import plot_img_and_mask_QR
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from probabilistic_unet import ProbabilisticUnet
+from probabilistic_QRunet import ProbabilisticQRUnet
 
 
 def dice_coef(mask1, mask2):
@@ -34,13 +34,12 @@ def predict_img_4q(net, full_img, device, scale_factor=1, out_threshold=0.5):
     with torch.no_grad():
 
         net.forward(img, None, training=False)
-        pred_pval = (F.sigmoid(net.sample(testing=True))).float()
+        pred_mask0, pred_mask1, pred_mask2, pred_mask3 = net.sample(testing=True)
+        pred_mask0 = (F.sigmoid(pred_mask0) > 0.5).float()
+        pred_mask1 = (F.sigmoid(pred_mask1) > 0.5).float()
+        pred_mask2 = (F.sigmoid(pred_mask2) > 0.5).float()
+        pred_mask3 = (F.sigmoid(pred_mask3) > 0.5).float()
         
-        pred_mask0 = (pred_pval > 0.125).float()
-        pred_mask1 = (pred_pval > 0.375).float()
-        pred_mask2 = (pred_pval > 0.625).float()
-        pred_mask3 = (pred_pval > 0.875).float()
-
         pred_mask0 = np.squeeze(pred_mask0.cpu().numpy())
         pred_mask1 = np.squeeze(pred_mask1.cpu().numpy())
         pred_mask2 = np.squeeze(pred_mask2.cpu().numpy())
@@ -80,8 +79,8 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    model_file = 'LIDC_4Q_BCE_prob_20.pth'# 'LIDC_4Q_BCE_prob.pth'
-    net_prob_unet = ProbabilisticUnet(input_channels=1,
+    model_file = '/home/ajoshi/projects/QRSegment/checkpoints_LIDC_QR_prob_unet/checkpoint_epoch1.pth'#'LIDC_QR_prob_20.pth'# 'LIDC_4Q_BCE_prob.pth'
+    net_prob_unet = ProbabilisticQRUnet(input_channels=1,
                                       num_classes=1,
                                       num_filters=[32, 64, 128, 192],
                                       latent_dim=2,
