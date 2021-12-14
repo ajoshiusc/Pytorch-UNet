@@ -12,7 +12,8 @@ def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, 
         inter = torch.dot(input.view(-1), target.view(-1))
         sets_sum = torch.sum(input) + torch.sum(target)
         if sets_sum.item() == 0:
-            sets_sum = 2 * inter
+            return 0.0 # return 0 if both masks are empty
+            #sets_sum = 2 * inter
 
         return (2 * inter + epsilon) / (sets_sum + epsilon)
     else:
