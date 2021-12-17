@@ -304,7 +304,7 @@ class ProbabilisticQRUnet(nn.Module):
         """
 
         #criterion = QRcost #BCEqr #QRcost
-        if epoch==0:
+        if epoch<5:
             criterion = BCEqr #QRcost_warmup
         else:
             criterion = QRcost #nn.BCEWithLogitsLoss(size_average = False, reduce=False, reduction='mean')
