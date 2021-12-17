@@ -18,7 +18,7 @@ import torch
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
-from probabilistic_QRunet import ProbabilisticQRUnet
+from probabilistic_QRunet_warmup import ProbabilisticQRUnet
 from utils import l2_regularisation
 
 
@@ -69,7 +69,7 @@ def train_net(net,
     ''')
 
     # 4. Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
-    optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, weight_decay=0)
+    optimizer = torch.optim.Adamax(net.parameters(), lr=1e-5, weight_decay=0)
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
     #criterion = QRcost # BCEqr #
