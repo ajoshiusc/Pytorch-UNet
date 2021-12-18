@@ -23,7 +23,7 @@ from utils import l2_regularisation
 
 
 
-dir_checkpoint = Path('./checkpoints_LIDC_QR_prob_unet/')
+dir_checkpoint = Path('./checkpoints_LIDC_QR_prob_unet_clippedgrad/')
 
 
 def train_net(net,
@@ -38,7 +38,7 @@ def train_net(net,
     # 1. Create dataset
 
     d = np.load = np.load('train.npz')
-    X = d['images']*.7 + 1e-4
+    X = d['images']*.99 + 1e-4
     M = d['masks']
     X = np.expand_dims(X, axis=3)
     M = np.expand_dims(M, axis=3)
@@ -69,7 +69,7 @@ def train_net(net,
     ''')
 
     # 4. Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
-    optimizer = torch.optim.SGD(net.parameters(), lr=1e-5, weight_decay=0)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3, weight_decay=0)
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
     #criterion = QRcost # BCEqr #
@@ -96,13 +96,14 @@ def train_net(net,
 
                 true_masks = torch.unsqueeze(true_masks,1)
                 net.forward(images, true_masks, training=True)
-                #masks_pred1=(F.sigmoid(net.sample(testing=True)) > 0.5).float()
+                #masks_pred1=(torch.sigmoid(net.sample(testing=True)) > 0.5).float()
                 elbo = net.elbo(true_masks, epoch=10)
                 reg_loss = l2_regularisation(net.posterior) + l2_regularisation(net.prior) + l2_regularisation(net.fcomb.layers)
-                loss = -elbo + 1e-5 * reg_loss
+                loss = -elbo + 1e-15 * reg_loss
                 optimizer.zero_grad()
                 if loss==loss:
                     loss.backward()
+                    torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=1)
                     optimizer.step()
                 
                     # + dice_loss(F.softmax(masks_pred, dim=1).float(),
@@ -144,7 +145,7 @@ def get_args():
                         type=int, default=20, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size',
                         metavar='B', type=int, default=24, help='Batch size')
-    parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-6,
+    parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-5,
                         help='Learning rate', dest='lr')
     parser.add_argument('--load', '-f', type=str,
                         default=False, help='Load model from a .pth file')
@@ -193,8 +194,8 @@ if __name__ == '__main__':
                   img_scale=args.scale,
                   val_percent=args.val / 100,
                   amp=args.amp)
-        torch.save(net.state_dict(), 'LIDC_QR_prob_'+str(args.epochs)+'.pth')
+        torch.save(net.state_dict(), 'LIDC_QR_prob_clippedgrad_'+str(args.epochs)+'.pth')
     except KeyboardInterrupt:
-        torch.save(net.state_dict(), 'LIDC_QR_prob_INTERRUPTED.pth')
+        torch.save(net.state_dict(), 'LIDC_QR_prob_INTERRUPTED_clippedgrad.pth')
         logging.info('Saved interrupt')
         sys.exit(0)

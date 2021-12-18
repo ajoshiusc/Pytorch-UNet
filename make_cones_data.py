@@ -3,8 +3,8 @@ from PIL import Image
 from tqdm import tqdm
 import random
 
-num_samples_training = 3000
-num_samples_valid = 3000
+num_samples_training = 30000
+num_samples_valid = 30000
 
 C = 128 * np.random.random((2, 1))
 rad = 1.0
@@ -55,7 +55,7 @@ for i in tqdm(range(num_samples_training)):
 
     data[i, ] = R  #= np.concatenate((data, R1))
     masks[i, ] = M  # = np.concatenate((masks, M))
-np.savez('cone_data_sim_training.npz', data=data, masks=masks)
+np.savez('cone_data_sim_training30000.npz', data=data, masks=masks)
 
 data = np.zeros((num_samples_valid, 256, 256), dtype=np.float16)
 masks = np.zeros((num_samples_valid, 256, 256), dtype=np.uint8)
@@ -81,4 +81,4 @@ for i in tqdm(range(num_samples_valid)):
     data[i, ] = R  #= np.concatenate((data, R1))
     masks[i, ] = M  # = np.concatenate((masks, M))
     
-np.savez('cone_data_sim_valid.npz', data=data, masks=masks)
+np.savez('cone_data_sim_valid30000.npz', data=data, masks=masks)

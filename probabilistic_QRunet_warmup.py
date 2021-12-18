@@ -13,7 +13,7 @@ Q3 = 0.125
 
 
 def BCEqr(input, target, q):
-    L = q*target*torch.log2(F.sigmoid(input)+1e-16) + (1.0-q)*(1.0-target)*torch.log2(1.0-F.sigmoid(input)+1e-16)
+    L = q*target*torch.log2(torch.sigmoid(input)+1e-6) + (1.0-q)*(1.0-target)*torch.log2(1.0001-torch.sigmoid(input))
 
     return torch.sum(-L)
 
@@ -21,13 +21,13 @@ def BCEqr(input, target, q):
 def QRcost_warmup(input, target, q=0.5):
     #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
     q=0.625
-    L = (target - (1.0-q))*(F.sigmoid(input)/1.0)
+    L = (target - (1.0-q))*(torch.sigmoid(input)/1.0)
     return torch.sum(-L)
 
 
 def QRcost(input, target, q=0.5):
     #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    L = (target - (1.0-q))*(F.sigmoid(input)/1.0)
+    L = (target - (1.0-q))*(torch.sigmoid(input)/1.0)
     return torch.sum(-L)
 
 """ def BCELoss(input, target):

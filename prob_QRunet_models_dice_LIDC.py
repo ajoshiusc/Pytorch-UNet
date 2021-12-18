@@ -79,7 +79,7 @@ def mask_to_image(mask: np.ndarray):
 
 if __name__ == '__main__':
 
-    model_file = '/home/ajoshi/projects/QRSegment/checkpoints_LIDC_QR_prob_unet/checkpoint_epoch1.pth'#'LIDC_QR_prob_20.pth'# 'LIDC_4Q_BCE_prob.pth'
+    model_file = '/home/ajoshi/projects/QRSegment/LIDC_QR_prob_clippedgrad_20.pth'#'LIDC_QR_prob_20.pth'# 'LIDC_4Q_BCE_prob.pth'
     net_prob_unet = ProbabilisticQRUnet(input_channels=1,
                                       num_classes=1,
                                       num_filters=[32, 64, 128, 192],

@@ -13,7 +13,7 @@ Q3 = 0.125
 
 
 def BCEqr(input, target, q):
-    L = q*target*torch.log2(F.sigmoid(input)+1e-16) + (1.0-q)*(1.0-target)*torch.log2(1.0-F.sigmoid(input)+1e-16)
+    L = q*target*torch.log2(torch.sigmoid(input)+1e-6) + (1.0-q)*(1.0-target)*torch.log2(1.0001-torch.sigmoid(input))
 
     return torch.sum(-L)
 
@@ -21,13 +21,13 @@ def BCEqr(input, target, q):
 def QRcost_warmup(input, target, q=0.5):
     #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
     q=0.625
-    L = (target - (1.0-q))*(F.sigmoid(input)/1.0)
+    L = (target - (1.0-q))*(torch.sigmoid(input)/1.0)
     return torch.sum(-L)
 
 
 def QRcost(input, target, q=0.5):
     #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    L = (target - (1.0-q))*(F.sigmoid(input)/1.0)
+    L = (target - (1.0-q))*(torch.sigmoid(input)/1.0)
     return torch.sum(-L)
 
 """ def BCELoss(input, target):
@@ -303,11 +303,11 @@ class ProbabilisticQRUnet(nn.Module):
         Calculate the evidence lower bound of the log-likelihood of P(Y|X)
         """
 
-        #criterion = QRcost #BCEqr #QRcost
-        if epoch==10:
-            criterion = BCEqr #QRcost_warmup
-        else:
-            criterion = QRcost #nn.BCEWithLogitsLoss(size_average = False, reduce=False, reduction='mean')
+        criterion = QRcost #BCEqr #
+        #if epoch==10:
+        #    criterion = BCEqr #QRcost_warmup
+        #else:
+        #    criterion = QRcost #nn.BCEWithLogitsLoss(size_average = False, reduce=False, reduction='mean')
         
         #criterion = BCELoss #nn.BCELoss(size_average = False, reduce=False, reduction=None)
 
@@ -324,7 +324,7 @@ class ProbabilisticQRUnet(nn.Module):
         reconstruction_loss_q3 = criterion(input=self.reconstruction_q3, target=segm, q=Q3)
 
 
-        self.reconstruction_loss = torch.sum(reconstruction_loss_q0 + reconstruction_loss_q1 + reconstruction_loss_q2 + reconstruction_loss_q3)
+        self.reconstruction_loss = 0.25 * torch.sum(reconstruction_loss_q0 + reconstruction_loss_q1 + reconstruction_loss_q2 + reconstruction_loss_q3)
         self.mean_reconstruction_loss = torch.mean(reconstruction_loss_q0) + torch.mean(reconstruction_loss_q1) + torch.mean(reconstruction_loss_q2) + torch.mean(reconstruction_loss_q3)
         self.mean_reconstruction_loss = 0.25 * self.mean_reconstruction_loss
 

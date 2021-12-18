@@ -25,7 +25,7 @@ def evaluate(net, dataloader, device):
 
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.sigmoid(mask_pred) > 0).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0).float()
             else:
                 mask_pred = F.one_hot(mask_pred.argmax(dim=1), net.n_classes).permute(0, 3, 1, 2).float()
 
@@ -56,7 +56,7 @@ def evaluate_QR(net, dataloader, device):
 
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.sigmoid(mask_pred) > 0).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0).float()
             else:
                 mask_pred = F.one_hot(mask_pred.argmax(dim=1), net.n_classes).permute(0, 3, 1, 2).float()
 
@@ -86,7 +86,7 @@ def evaluate_isle(net, dataloader, device):
 
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.sigmoid(mask_pred) > 0).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0).float()
             else:
                 mask_pred = F.one_hot(mask_pred.argmax(dim=1), net.n_classes).permute(0, 3, 1, 2).float()
 
@@ -115,7 +115,7 @@ def evaluate_isle_QR(net, dataloader, device):
 
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.sigmoid(mask_pred) > 0).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0).float()
             else:
                 mask_pred = F.one_hot(mask_pred.argmax(dim=1), net.n_classes).permute(0, 3, 1, 2).float()
 
@@ -144,7 +144,7 @@ def evaluate_grayscale(net, dataloader, device):
 
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.sigmoid(mask_pred) > 0).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0).float()
             else:
                 mask_pred = F.one_hot(mask_pred.argmax(dim=1), net.n_classes).permute(0, 3, 1, 2).float()
 
@@ -175,7 +175,7 @@ def evaluate_grayscale_QR(net, dataloader, device):
 
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.sigmoid(mask_pred) > 0.5).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0.5).float()
             else:
                 mask_pred = (F.one_hot(mask_pred.argmax(dim=1), net.n_classes).permute(0, 3, 1, 2)>0.5).float()
 
@@ -204,7 +204,7 @@ def evaluate_grayscale_QR_4Q(net, dataloader, device):
 
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.sigmoid(mask_pred) > 0.5).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0.5).float()
             else:
                 mask_pred = (F.one_hot(mask_pred.argmax(dim=1), net.n_classes).permute(0, 3, 1, 2)>0.5).float()
 
@@ -233,7 +233,7 @@ def evaluate_grayscale_prob(net, dataloader, device):
             mask_pred=net.sample(testing=True)
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.Sigmoid(mask_pred) > 0.5).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0.5).float()
             else:
                 mask_pred = (F.one_hot(mask_pred.argmax(dim=1), net.n_classes+1).permute(0, 3, 1, 2)>0.5).float()
 
@@ -259,11 +259,11 @@ def evaluate_grayscale_QR_prob(net, dataloader, device):
 
         with torch.no_grad():
             # predict the mask
-            net.forward(image, true_masks, training=True)
+            net.forward(image, true_masks, training=False)
             _, _, mask_pred, _ = net.sample(testing=True)
             # convert to one-hot format
             if net.n_classes == 1:
-                mask_pred = (F.sigmoid(mask_pred) > 0.5).float()
+                mask_pred = (torch.sigmoid(mask_pred) > 0.5).float()
             else:
                 mask_pred = (F.one_hot(mask_pred.argmax(dim=1), net.n_classes+1).permute(0, 3, 1, 2)>0.5).float()
 
