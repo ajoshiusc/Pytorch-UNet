@@ -13,6 +13,7 @@ Q3 = 0.125
 
 
 def BCEqr(input, target, q):
+    q=.5
     L = q*target*torch.log2(torch.sigmoid(input)+1e-6) + (1.0-q)*(1.0-target)*torch.log2(1.0001-torch.sigmoid(input))
 
     return torch.sum(-L)
@@ -324,7 +325,7 @@ class ProbabilisticQRUnet(nn.Module):
         reconstruction_loss_q3 = criterion(input=self.reconstruction_q3, target=segm, q=Q3)
 
 
-        self.reconstruction_loss = torch.sum(reconstruction_loss_q0 + reconstruction_loss_q1 + reconstruction_loss_q2 + reconstruction_loss_q3)
+        self.reconstruction_loss = 0.25*torch.sum(reconstruction_loss_q0 + reconstruction_loss_q1 + reconstruction_loss_q2 + reconstruction_loss_q3)
         self.mean_reconstruction_loss = torch.mean(reconstruction_loss_q0) + torch.mean(reconstruction_loss_q1) + torch.mean(reconstruction_loss_q2) + torch.mean(reconstruction_loss_q3)
         self.mean_reconstruction_loss = 0.25 * self.mean_reconstruction_loss
 

@@ -11,6 +11,11 @@ Q1 = 0.625 #0.8# 0.5
 Q2 = 0.375 #0.75 #0.25
 Q3 = 0.125
 
+Q0=.5
+Q1=.5
+Q2=.5
+Q3=.5
+
 
 def BCEqr(input, target, q):
     L = q*target*torch.log2(torch.sigmoid(input)+1e-6) + (1.0-q)*(1.0-target)*torch.log2(1.0001-torch.sigmoid(input))
@@ -27,7 +32,7 @@ def QRcost_warmup(input, target, q=0.5):
 
 def QRcost(input, target, q=0.5):
     #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
-    L = (target - (1.0-q))*(torch.sigmoid(input)/1.0)
+    L = (target - (1.0-q))*(torch.sigmoid(input))
     return torch.sum(-L)
 
 """ def BCELoss(input, target):
@@ -303,7 +308,7 @@ class ProbabilisticQRUnet(nn.Module):
         Calculate the evidence lower bound of the log-likelihood of P(Y|X)
         """
 
-        criterion = QRcost #BCEqr #
+        criterion = QRcost
         #if epoch==10:
         #    criterion = BCEqr #QRcost_warmup
         #else:

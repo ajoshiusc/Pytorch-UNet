@@ -7,8 +7,26 @@ from torch.distributions import Normal, Independent, kl
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-def BCELoss(input, target):
+def BCELosstmp(input, target):
     L = target*torch.log2(input) + (1.0-target)*torch.log2(1.0-input)
+    return torch.sum(-L)
+
+def BCEqr(input, target, q=0.5):
+    L = q*target*torch.log2(torch.sigmoid(input)+1e-6) + (1.0-q)*(1.0-target)*torch.log2(1.0001-torch.sigmoid(input))
+
+    return torch.sum(-L)
+
+
+def QRcost_warmup(input, target, q=0.5):
+    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+    q=0.625
+    L = (target - (1.0-q))*(torch.sigmoid(input)/1.0)
+    return torch.sum(-L)
+
+
+def QRcost(input, target, q=0.5):
+    #L = (Y - (1-q))*torch.sigmoid((f-.5)/h)
+    L = (target - (1.0-q))*(torch.sigmoid(input))
     return torch.sum(-L)
 
 class Encoder(nn.Module):
@@ -271,8 +289,8 @@ class ProbabilisticUnet(nn.Module):
         Calculate the evidence lower bound of the log-likelihood of P(Y|X)
         """
 
-        criterion = nn.BCEWithLogitsLoss(size_average = False, reduce=False, reduction='mean')
-        #criterion = BCELoss #nn.BCELoss(size_average = False, reduce=False, reduction=None)
+        #criterion = nn.BCEWithLogitsLoss(size_average = False, reduce=False, reduction='mean')
+        criterion = BCEqr #QRcost #nn.BCELoss(size_average = False, reduce=False, reduction=None)
 
         z_posterior = self.posterior_latent_space.rsample()
         

@@ -38,7 +38,7 @@ def train_net(net,
     # 1. Create dataset
 
     d = np.load = np.load('train.npz')
-    X = d['images']*.7 + 1e-4
+    X = d['images']*.99 + 1e-4
     M = d['masks']
     X = np.expand_dims(X, axis=3)
     M = np.expand_dims(M, axis=3)
@@ -97,7 +97,7 @@ def train_net(net,
                 true_masks = torch.unsqueeze(true_masks,1)
                 net.forward(images, true_masks, training=True)
                 #masks_pred1=(torch.sigmoid(net.sample(testing=True)) > 0.5).float()
-                elbo = net.elbo(true_masks, epoch=10)
+                elbo = net.elbo(true_masks, epoch=epoch)
                 reg_loss = l2_regularisation(net.posterior) + l2_regularisation(net.prior) + l2_regularisation(net.fcomb.layers)
                 loss = -elbo + 1e-5 * reg_loss
                 optimizer.zero_grad()

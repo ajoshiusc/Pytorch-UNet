@@ -69,7 +69,7 @@ def train_net(net,
     ''')
 
     # 4. Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-5, weight_decay=0)
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     # BCEqr #nn.BCELoss(reduction='sum')  #nn.CrossEntropyLoss()
     #criterion = QRcost # BCEqr #
